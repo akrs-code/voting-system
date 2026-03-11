@@ -1,5 +1,7 @@
 import { login, signup, bulkSignup } from '../controllers/authController.js'
 import { limiter } from '../middleware/rateLimiter.js'
+import { verifyToken } from '../middleware/verifyToken.js';
+import { authorizeRole } from '../middleware/authorizeRole.js';
 import express from 'express'
 
 const router = express.Router();
