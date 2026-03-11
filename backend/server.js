@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import helmet from 'helmet'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes.js'
+import electionRoutes from './routes/electionRoutes.js'
 
 dotenv.config()
 const app = express()
@@ -13,6 +14,7 @@ app.use(helmet())
 
 const API_PREFIX = "/api/v1";
 app.use(`${API_PREFIX}/auth`, authRoutes);
+app.use(`${API_PREFIX}/election`, electionRoutes );
 
 mongoose.connect(process.env.MONGO_URI).then(() => console.log("Connected to the database"))
 
