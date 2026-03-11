@@ -4,8 +4,8 @@ import express from 'express'
 
 const router = express.Router();
 
-router.post('/signup', signup)
+router.post('/signup', verifyToken, authorizeRole("admin"), signup)
 router.post('/login', limiter, login)
-router.post("/signup/bulk", bulkSignup);
+router.post("/signup/bulk", verifyToken, authorizeRole("admin"), bulkSignup);
 
 export default router
