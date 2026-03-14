@@ -5,7 +5,9 @@ export const createElection = async (req, res) => {
         const { title, startDate, endDate } = req.body;
         if (!title || !startDate || !endDate)
             return res.status(400).json({ error: "All fields are required" });
-
+        if (new Date(startDate) >= new Date(endDate)) {
+            return res.status(400).json({ error: "Invalid timeframe: startDate must be before endDate" });
+        }
         const election = await Election.create({ title, startDate, endDate });
         res.status(201).json({ message: "Election created", election });
     } catch (error) {
@@ -16,7 +18,24 @@ export const createElection = async (req, res) => {
 export const updateElection = async (req, res) => {
     try {
         const { id } = req.params;
-        const election = await Election.findByIdAndUpdate(id, req.body, { new: true });
+        const { startDate, endDate } = req.body;
+
+        if (startDate || endDate) {
+            const newStart = startDate ? new Date(startDate) : undefined;
+            const newEnd = endDate ? new Date(endDate) : undefined;
+
+            const currentElection = await Election.findById(id);
+            if (!currentElection) return res.status(404).json({ error: "Election not found" });
+
+            const finalStart = newStart || currentElection.startDate;
+            const finalEnd = newEnd || currentElection.endDate;
+
+            if (finalStart >= finalEnd) {
+                return res.status(400).json({ error: "Invalid timeframe: startDate must be before endDate" });
+            }
+        }
+
+        const election = await Election.findByIdAndUpdate(id, req.body, { returnDocument: "after" });
         if (!election) return res.status(404).json({ error: "Election not found" });
 
         res.json({ message: "Election updated", election });
@@ -60,7 +79,7 @@ export const activateElection = async (req, res) => {
     try {
         const { id } = req.params;
         await Election.updateMany({ isActive: true }, { isActive: false });
-        const election = await Election.findByIdAndUpdate(id, { isActive: true }, { new: true });
+        const election = await Election.findByIdAndUpdate(id, { isActive: true }, { returnDocument: "after" });
         if (!election) return res.status(404).json({ error: "Election not found" });
 
         res.json({ message: "Election activated", election });
