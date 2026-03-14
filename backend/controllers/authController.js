@@ -6,38 +6,41 @@ export const login = async (req, res) => {
     try {
         const { studentId, password } = req.body;
 
-        if (!studentId || !password)
-            return res.status(400).json({ error: "All fields are required" });
+        if (!studentId || !password) {
+            return res.status(400).json({ error: "Student ID and password are required" });
+        }
 
-        const student = await User.findOne({ studentId });
+        const user = await User.findOne({ studentId });
 
-        if (!student)
-            return res.status(401).json({ error: "Account doesn't exist" });
-
-        const isMatch = await bcrypt.compare(password, student.password);
-
-        if (!isMatch)
+        if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
 
         const token = jwt.sign(
-            { userId: student._id, role: student.role },
+            { userId: user._id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: "2h" }
         );
 
         res.json({
             token,
-            student: {
-                _id: student._id,
-                name: student.name,
-                department: student.department,
-                yearLevel: student.yearLevel,
-                role: student.role,
-                hasVoted: student.hasVoted,
+            user: {
+                _id: user._id,
+                name: user.name,
+                department: user.department,
+                yearLevel: user.yearLevel,
+                role: user.role,
+                hasVoted: user.hasVoted,
             },
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: "Server error during login" });
     }
 };
 
@@ -45,46 +48,29 @@ export const signup = async (req, res) => {
     try {
         const { name, studentId, password, department, yearLevel, role } = req.body;
 
-        if (!name || !studentId || !password || !department || !yearLevel || !role)
-            return res.status(400).json({ error: "All fields are required" });
+        if (!name || !studentId || !password || !department || !yearLevel) {
+            return res.status(400).json({ error: "All required fields must be filled" });
+        }
 
-        let student = await User.findOne({ studentId });
-
-        if (student) {
-            const token = jwt.sign(
-                { userId: student._id, role: student.role },
-                process.env.JWT_SECRET,
-                { expiresIn: "2h" }
-            );
-
-            return res.status(200).json({
-                message: "User reconnected",
-                token,
-                student: {
-                    _id: student._id,
-                    name: student.name,
-                    department: student.department,
-                    yearLevel: student.yearLevel,
-                    role: student.role,
-                    hasVoted: student.hasVoted,
-                },
-            });
+        const existingUser = await User.findOne({ studentId });
+        if (existingUser) {
+            return res.status(400).json({ error: "User with this Student ID already exists" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        student = await User.create({
+        const newUser = await User.create({
             name,
             studentId,
             password: hashedPassword,
             department,
             yearLevel,
-            role,
+            role: role || "voter",
         });
 
         res.status(201).json({
             message: "User registered successfully",
-            student,
+            studentId: newUser.studentId
         });
     } catch (error) {
         return res.status(500).json({ error: error.message });
@@ -95,21 +81,72 @@ export const bulkSignup = async (req, res) => {
     try {
         const users = req.body;
 
-        const hashedUsers = await Promise.all(
-            users.map(async (user) => ({
-                ...user,
-                password: await bcrypt.hash(user.password, 10),
-            }))
-        );
+        if (!Array.isArray(users) || users.length === 0) {
+            return res.status(400).json({ error: "Payload must be a non-empty array of users" });
+        }
 
-        const result = await User.insertMany(hashedUsers);
+        const studentIds = users.map((u) => u.studentId);
+
+        const existingUsers = await User.find({
+            studentId: { $in: studentIds }
+        }).select("studentId");
+
+        const existingIdSet = new Set(existingUsers.map((u) => u.studentId));
+
+        const skipped = [];
+
+        const toInsert = await Promise.all(
+            users.map(async (user) => {
+                if (!user.studentId || !user.password || !user.name) {
+                    skipped.push({
+                        studentId: user.studentId || "Unknown",
+                        reason: "Missing required fields"
+                    });
+                    return null;
+                }
+
+                if (existingIdSet.has(user.studentId)) {
+                    skipped.push({
+                        studentId: user.studentId,
+                        reason: "Already exists"
+                    });
+                    return null;
+                }
+
+                const hashedPassword = await bcrypt.hash(user.password, 10);
+
+                return {
+                    name: user.name,
+                    studentId: user.studentId,
+                    password: hashedPassword,
+                    department: user.department,
+                    yearLevel: user.yearLevel,
+                    role: user.role || "voter"
+                };
+            })
+        );
+        
+        const filteredUsers = toInsert.filter(Boolean);
+
+        let result = [];
+        if (filteredUsers.length > 0) {
+            result = await User.insertMany(filteredUsers, { ordered: false });
+        }
 
         res.status(201).json({
-            message: "Users added successfully",
-            count: result.length
+            message: "Bulk processing completed",
+            summary: {
+                totalReceived: users.length,
+                successfullyInserted: result.length,
+                skippedCount: skipped.length
+            },
+            skippedDetails: skipped
         });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: "Bulk signup failed",
+            details: error.message
+        });
     }
 };
