@@ -20,7 +20,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.4",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
