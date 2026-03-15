@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const candidateSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -14,7 +15,7 @@ const candidateSchema = new mongoose.Schema({
     yearLevel: {
         type: Number,
         enum: [1, 2, 3, 4],
-        required: true
+        required: false
     },
 
     partylist: String,
