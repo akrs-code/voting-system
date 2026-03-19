@@ -41,10 +41,10 @@ io.on('connection', (socket) => {
 
 const API_PREFIX = "/api/v1";
 app.use(`${API_PREFIX}/auth`, authRoutes);
-app.use(`${API_PREFIX}/election`, electionRoutes);
-app.use(`${API_PREFIX}/candidate`, candidateRoutes);
+app.use(`${API_PREFIX}/elections`, electionRoutes);
+app.use(`${API_PREFIX}/candidates`, candidateRoutes);
 app.use(`${API_PREFIX}/ballot`, ballotRoutes);
-app.use(`${API_PREFIX}/position`, positionRoutes);
+app.use(`${API_PREFIX}/positions`, positionRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Connected to the database"))

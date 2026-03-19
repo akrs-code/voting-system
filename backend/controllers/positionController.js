@@ -4,8 +4,20 @@ import Election from "../models/electionSchema.js";
 
 export const createPosition = async (req, res) => {
     try {
-        const { name, maxVote, department, yearLevel } = req.body;
-        const position = await Position.create({ name, maxVote, department, yearLevel });
+        const { name, maxVote, department, yearLevel, electionId } = req.body;
+
+        if (!electionId) {
+            return res.status(400).json({ error: "electionId is required" });
+        }
+
+        const position = await Position.create({ 
+            name, 
+            maxVote, 
+            department, 
+            yearLevel, 
+            election: electionId 
+        });
+
         res.status(201).json(position);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -15,41 +27,60 @@ export const createPosition = async (req, res) => {
 export const getPositionsByDepartment = async (req, res) => {
     try {
         const { department } = req.params;
-        const positions = await Position.find({
+        const { electionId } = req.query; 
+        
+        const query = {
             $or: [{ department: department }, { department: "ALL" }]
-        });
-        res.json(positions);
+        };
+        
+        if (electionId) query.election = electionId;
+
+        const positions = await Position.find(query);
+        res.status(200).json(positions);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
-
 export const getVotingForm = async (req, res) => {
     try {
-        const { department, yearLevel } = req.user; // voter info
+        const { department, yearLevel } = req.user; 
+
         const activeElection = await Election.findOne({ isActive: true });
-        if (!activeElection) return res.status(404).json({ error: "No active election" });
+        if (!activeElection) {
+            return res.status(404).json({ error: "No active election found" });
+        }
 
         const positions = await Position.find({
-            $or: [{ department }, { department: "ALL" }]
+            election: activeElection._id,
+            $or: [
+                { department: department }, 
+                { department: "ALL" }
+            ],
+            $or: [
+                { yearLevel: yearLevel },
+                { yearLevel: null } 
+            ]
         });
 
-        const form = await Promise.all(
+    
+        const formWithCandidates = await Promise.all(
             positions.map(async (pos) => {
-                const candidateFilter = {
-                    position: pos._id,
-                    department
+                const candidates = await Candidate.find({ position: pos._id })
+                    .select('-__v');
+                
+                return {
+                    ...pos.toObject(),
+                    candidates
                 };
-                if (pos.yearLevel && pos.yearLevel !== yearLevel) {
-                    return null;
-                }
-
-                const candidates = await Candidate.find(candidateFilter);
-                return { ...pos.toObject(), candidates };
             })
         );
 
-        res.json(form);
+        res.status(200).json({
+            electionName: activeElection.title,
+            electionId: activeElection._id,
+            form: formWithCandidates
+        });
+
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

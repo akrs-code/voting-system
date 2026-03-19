@@ -32,6 +32,7 @@ export const login = async (req, res) => {
             token,
             user: {
                 _id: user._id,
+                studentId: user.studentId,
                 name: user.name,
                 department: user.department,
                 yearLevel: user.yearLevel,

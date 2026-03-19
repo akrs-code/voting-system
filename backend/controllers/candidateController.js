@@ -1,6 +1,4 @@
 import Candidate from "../models/candidateSchema.js";
-import Election from "../models/electionSchema.js";
-
 export const addCandidate = async (req, res) => {
     try {
         const { name, department, position, party, electionId } = req.body;

@@ -19,6 +19,11 @@ const positionSchema = new mongoose.Schema({
     type: Number,
     enum: [1, 2, 3, 4],
     default: null
+  },
+  election: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Election',
+    required: true
   }
 });
 
