@@ -78,6 +78,58 @@ export const signup = async (req, res) => {
     }
 };
 
+export const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, studentId, password, department, yearLevel, role, hasVoted } = req.body;
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        if (studentId && studentId !== user.studentId) {
+            const existingUser = await User.findOne({ studentId });
+            if (existingUser) return res.status(400).json({ error: "New Student ID already in use" });
+            user.studentId = studentId;
+        }
+
+        if (name) user.name = name;
+        if (department) user.department = department;
+        if (yearLevel) user.yearLevel = yearLevel;
+        if (role) user.role = role;
+        if (hasVoted !== undefined) user.hasVoted = hasVoted;
+
+        if (password && typeof password === 'string' && password.trim() !== "") {
+            user.password = await bcrypt.hash(password, 10);
+        }
+
+        await user.save();
+        res.json({ message: "User updated successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update user" });
+    }
+};
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({ role: "voter" }).select("-password").sort({ name: 1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+};
+
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedUser = await User.findByIdAndDelete(id);
+        if (!deletedUser) return res.status(404).json({ error: "User not found" });
+        res.json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to delete user" });
+    }
+};
+
+
 export const bulkSignup = async (req, res) => {
     try {
         const users = req.body;
@@ -126,7 +178,7 @@ export const bulkSignup = async (req, res) => {
                 };
             })
         );
-        
+
         const filteredUsers = toInsert.filter(Boolean);
 
         let result = [];
@@ -151,80 +203,4 @@ export const bulkSignup = async (req, res) => {
         });
     }
 
-};
-
-export const updateUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, studentId, password, department, yearLevel, role, hasVoted } = req.body;
-
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // If studentId is being changed, check if the new one is already taken
-        if (studentId && studentId !== user.studentId) {
-            const existingUser = await User.findOne({ studentId });
-            if (existingUser) {
-                return res.status(400).json({ error: "New Student ID already in use" });
-            }
-            user.studentId = studentId;
-        }
-
-        // Update fields if provided
-        if (name) user.name = name;
-        if (department) user.department = department;
-        if (yearLevel) user.yearLevel = yearLevel;
-        if (role) user.role = role;
-        if (hasVoted !== undefined) user.hasVoted = hasVoted;
-
-        // Only re-hash password if it's actually being changed
-        if (password && password.trim() !== "") {
-            user.password = await bcrypt.hash(password, 10);
-        }
-
-        await user.save();
-
-        res.json({
-            message: "User updated successfully",
-            user: {
-                _id: user._id,
-                studentId: user.studentId,
-                name: user.name,
-                role: user.role,
-                hasVoted: user.hasVoted
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to update user", details: error.message });
-    }
-};
-
-export const deleteUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (req.user && req.user.userId === id) {
-            return res.status(400).json({ error: "You cannot delete your own admin account" });
-        }
-
-        const deletedUser = await User.findByIdAndDelete(id);
-
-        if (!deletedUser) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        res.json({ message: "User deleted successfully", studentId: deletedUser.studentId });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to delete user", details: error.message });
-    }
-};
-
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find({ role: "voter" }).select("-password").sort({ name: 1 });
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch users" });
-    }
 };
