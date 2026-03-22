@@ -5,11 +5,12 @@ import VoterLayout from "../components/VoterLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 import Login from "../pages/Login";
-import Dashboard from "../pages/Dashboard";
 import Voters from "../pages/Voters";
 import Elections from "../pages/Elections";
 import Candidates from "../pages/Candidates";
 import VoterDashboard from "../pages/VoterDashboard"
+import Dashboard from "../pages/Dashboard";
+import Positions from "../pages/Position";
 
 function App() {
   const { user, loading } = useAuth();
@@ -35,6 +36,7 @@ function App() {
             <Route path="/dashboard/admin" element={<Dashboard />} />
             <Route path="/dashboard/admin/elections" element={<Elections />} />
             <Route path="/dashboard/admin/voters" element={<Voters />} />
+            <Route path="/dashboard/admin/positions" element={<Positions />} />
             <Route path="/dashboard/admin/candidates" element={<Candidates />} />
           </Route>
         </Route>
