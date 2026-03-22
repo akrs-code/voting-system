@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Vote, UserPlus, X, LucideIcon } from 'lucide-react';
+import { BarChart3, Users, Vote, UserPlus, X, LucideIcon, Trophy } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 interface MenuItem {
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     { label: 'Live Analytics', icon: BarChart3, href: '/dashboard/admin' },
     { label: 'Voters', icon: Users, href: '/dashboard/admin/voters' },
     { label: 'Elections', icon: Vote, href: '/dashboard/admin/elections' },
+    { label: 'Positions', icon: Trophy, href: '/dashboard/admin/positions' },
     { label: 'Candidates', icon: UserPlus, href: '/dashboard/admin/candidates' },
   ];
 
@@ -30,9 +31,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   };
 
   return (
-    <aside className="flex flex-col w-full h-full text-white">
+    <aside className="flex flex-col w-full h-full text-white font-poppins ">
       <div className="p-8 flex items-center justify-between">
-        <h2 className="text-[0.9rem] font-black tracking-[0.2em] uppercase">
+        <h2 className="text-[0.9rem] font-semibold tracking-[0.2em] uppercase">
           Menu
         </h2>
         <button onClick={onClose} className="lg:hidden p-1 text-slate-400 hover:text-white">

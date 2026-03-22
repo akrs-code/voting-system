@@ -11,8 +11,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
     const { user, logout } = useAuth();
 
     return (
-        <nav className="sticky top-0 z-[60] w-full bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 py-3">
-            <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+        <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 font-poppins">
+            <div className="max-w-400 mx-auto flex items-center justify-between">
 
                 <div className="flex items-center gap-4">
                     <button
@@ -23,7 +23,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     </button>
 
                     <img src="/cics.png" alt="Logo" className="w-10 h-10 object-contain" />
-                    <h1 className="text-sm font-black tracking-tight text-[#2f318d] uppercase leading-none">
+                    <h1 className="text-sm font-semibold tracking-tight text-[#2f318d] uppercase leading-none">
                         MSU CICS ELECTION DAY
                     </h1>
                 </div>
@@ -45,7 +45,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                                 : "bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200"
                             }`}
                     >
-                        <div className="h-9 w-9 rounded-xl bg-[#2f318d] flex items-center justify-center text-white shadow-lg shadow-blue-900/10 shrink-0 font-bold">
+                        <div className="h-9 w-9 rounded-xl bg-[#2f318d] flex items-center justify-center text-white font-bold">
                             {user?.name?.charAt(0) || <User size={20} />}
                         </div>
                     </button>
@@ -53,13 +53,10 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     {isOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                            <div className="absolute right-0 mt-3 w-72 bg-white border border-slate-100 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                <div className="px-6 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
-                                    <div className="h-12 w-12 shrink-0 rounded-2xl bg-[#2f318d] flex items-center justify-center text-white font-bold text-xl">
-                                        {user?.name?.charAt(0) || "A"}
-                                    </div>
+                            <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-black text-slate-900 truncate">
+                                        <span className="text-sm font-semibold text-slate-900 truncate">
                                             {user?.name || "Admin User"}
                                         </span>
                                         <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
@@ -74,7 +71,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                                             logout();
                                             setIsOpen(false);
                                         }}
-                                        className="w-full text-left px-4 py-4 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl flex items-center gap-3 transition-colors"
+                                        className="w-full text-left px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-md flex items-center gap-3 transition-colors"
                                     >
                                         <LogOut size={18} strokeWidth={2.5} />
                                         Sign Out Account
