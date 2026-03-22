@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import AdminLayout from "../components/AdminLayout";
 import VoterLayout from "../components/VoterLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -11,11 +12,23 @@ import Candidates from "../pages/Candidates";
 import VoterDashboard from "../pages/VoterDashboard"
 
 function App() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            user ? (
+              <Navigate to={user.role === "admin" ? "/dashboard/admin" : "/dashboard/voter"} replace />
+            ) : (
+              <Login />
+            )
+          }
+        />
 
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route element={<AdminLayout />}>
@@ -31,7 +44,7 @@ function App() {
             <Route path="/dashboard/voter" element={<VoterDashboard />} />
           </Route>
         </Route>
-        
+
         <Route path="/unauthorized" element={<div>Unauthorized</div>} />
         <Route path="*" element={<div>404 Not Found</div>} />
       </Routes>

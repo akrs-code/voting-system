@@ -12,7 +12,6 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("user");
     try {
@@ -23,8 +22,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
-  
-
   const [loading] = useState(false);
 
   const loginState = useCallback((data: AuthResponse) => {
