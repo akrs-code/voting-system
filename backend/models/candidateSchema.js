@@ -9,12 +9,12 @@ const candidateSchema = new mongoose.Schema({
 
     department: {
         type: String,
-        enum: ["DIS", "DCS"]
+        enum: ["DIS", "DCS", "ALL"]
     },
 
     yearLevel: {
         type: Number,
-        enum: [1, 2, 3, 4],
+        enum: [1, 2, 3, 4, null],
         required: false
     },
 
@@ -23,6 +23,11 @@ const candidateSchema = new mongoose.Schema({
     position: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Position"
+    },
+    election: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Election",
+        required: true
     }
 });
 
