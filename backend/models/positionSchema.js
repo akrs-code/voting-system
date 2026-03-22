@@ -17,7 +17,7 @@ const positionSchema = new mongoose.Schema({
   
   yearLevel: {
     type: Number,
-    enum: [1, 2, 3, 4],
+    enum: [1, 2, 3, 4, null],
     default: null
   },
   election: { 
