@@ -16,8 +16,10 @@ API.interceptors.request.use(
 );
 
 export const candidateService = {
-  create: async (data: any) => {
-    const response = await API.post("/", data);
+  create: async (data: FormData) => {
+    const response = await API.post("/", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 
@@ -28,8 +30,10 @@ export const candidateService = {
     return response.data;
   },
 
-  update: async (id: string, data: any) => {
-    const response = await API.put(`/${id}`, data);
+  update: async (id: string, data: FormData) => {
+    const response = await API.patch(`/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 
