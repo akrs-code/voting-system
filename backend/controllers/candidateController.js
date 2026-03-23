@@ -3,7 +3,8 @@ import Position from "../models/positionSchema.js";
 
 export const addCandidate = async (req, res) => {
     try {
-        const { name, department, position, partylist, electionId, yearLevel, profilePicture } = req.body;
+        const { name, department, position, partylist, electionId, yearLevel } = req.body;
+        const profilePicture = req.file ? req.file.path : "";
 
         if (!name || !position || !electionId) {
             return res.status(400).json({ error: "Name, position, and electionId are required." });
@@ -27,7 +28,7 @@ export const addCandidate = async (req, res) => {
             partylist, 
             election: electionId,
             yearLevel: yearLevel || null,
-            profilePicture: profilePicture || ""
+            profilePicture
         });
 
         const populatedCandidate = await Candidate.findById(newCandidate._id)
@@ -79,6 +80,7 @@ export const updateCandidate = async (req, res) => {
         
         if (electionId) finalUpdate.election = electionId;
         if (position) finalUpdate.position = position;
+        if (req.file) finalUpdate.profilePicture = req.file.path;
 
         const updatedCandidate = await Candidate.findByIdAndUpdate(
             id, 
