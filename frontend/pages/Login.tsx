@@ -19,7 +19,7 @@ export default function Login() {
   });
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center p-4 font-poppins bg-[radial-gradient(at_0%_0%,rgba(99,102,241,0.12),transparent_60%),radial-gradient(at_100%_100%,rgba(99,102,241,0.10),transparent_65%)] bg-slate-50">
+    <div className="relative flex min-h-screen w-full font-poppins items-center justify-center p-4 bg-[radial-gradient(at_0%_0%,rgba(99,102,241,0.12),transparent_60%),radial-gradient(at_100%_100%,rgba(99,102,241,0.10),transparent_65%)] bg-slate-50">
 
       <Formik
         initialValues={{ studentId: "", password: "" }}
