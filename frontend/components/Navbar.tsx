@@ -1,19 +1,18 @@
-import { useState } from 'react';
-import { Search, LogOut, User, Menu as MenuIcon } from 'lucide-react';
-import { useAuth } from "../hooks/useAuth";
+import { Menu as MenuIcon } from 'lucide-react';
+import { useActiveElection } from "../hooks/useActiveElection";
 
 interface NavbarProps {
     onMenuClick: () => void;
 }
 
 const Navbar = ({ onMenuClick }: NavbarProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const { user, logout } = useAuth();
+    const { activeElection } = useActiveElection();
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 font-poppins">
-            <div className="max-w-400 mx-auto flex items-center justify-between">
-
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+                
+                {/* Left: Branding */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onMenuClick}
@@ -23,60 +22,35 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     </button>
 
                     <img src="/cics.png" alt="Logo" className="w-10 h-10 object-contain" />
-                    <h1 className="text-sm font-semibold tracking-tight text-[#2f318d] uppercase leading-none">
-                        MSU CICS ELECTION DAY
-                    </h1>
+                    <div className="hidden sm:block">
+                        <h1 className="text-sm font-bold tracking-tight text-[#2f318d] uppercase leading-none">
+                            MSU CICS ELECTION DAY
+                        </h1>
+                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">
+                            Official Electoral Dashboard
+                        </p>
+                    </div>
                 </div>
 
-                <div className="relative w-full max-w-md mx-12 hidden md:block">
-                    <input
-                        type="text"
-                        placeholder="Search elections, voters..."
-                        className="h-11 w-full border border-slate-200 px-5 pr-12 text-sm rounded-2xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#2f318d]/5 focus:border-[#2f318d] transition-all"
-                    />
-                    <Search className="absolute right-4 top-3 h-5 w-5 text-slate-400" />
-                </div>
+                {/* Right: Live Status Indicator */}
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
+                    <div className="relative flex h-2 w-2">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeElection ? 'bg-emerald-400' : 'bg-slate-400'}`}></span>
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${activeElection ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+                    </div>
+                    
 
-                <div className="relative">
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className={`flex items-center justify-center h-11 w-11 rounded-2xl transition-all active:scale-95 border shadow-sm ${isOpen
-                                ? "bg-slate-100 border-slate-300 ring-4 ring-slate-100"
-                                : "bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200"
-                            }`}
-                    >
-                        <div className="h-9 w-9 rounded-xl bg-[#2f318d] flex items-center justify-center text-white font-bold">
-                            {user?.name?.charAt(0) || <User size={20} />}
-                        </div>
-                    </button>
 
-                    {isOpen && (
+                    {activeElection && (
                         <>
-                            <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                            <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-semibold text-slate-900 truncate">
-                                            {user?.name || "Admin User"}
-                                        </span>
-                                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                                            {user?.role || "System Administrator"}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="p-3">
-                                    <button
-                                        onClick={() => {
-                                            logout();
-                                            setIsOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-md flex items-center gap-3 transition-colors"
-                                    >
-                                        <LogOut size={18} strokeWidth={2.5} />
-                                        Sign Out Account
-                                    </button>
-                                </div>
+                            <div className="h-6 w-px bg-slate-200 mx-2" />
+                            <div className="flex flex-col max-w-[150px] md:max-w-[300px]">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                    Active Election
+                                </span>
+                                <span className="text-[11px] font-black text-[#2f318d] truncate mt-0.5">
+                                    {activeElection.title}
+                                </span>
                             </div>
                         </>
                     )}

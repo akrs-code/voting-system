@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Vote, UserPlus, X, LucideIcon, Trophy } from 'lucide-react';
+import { BarChart3, Users, Vote, UserPlus, X, LucideIcon, Trophy, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { useAuth } from "../hooks/useAuth";
 
 interface MenuItem {
   label: string;
@@ -16,6 +17,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const menuItems: MenuItem[] = [
     { label: 'Live Analytics', icon: BarChart3, href: '/dashboard/admin' },
@@ -30,8 +32,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     if (onClose) onClose();
   };
 
+  const handleLogout = () => {
+    logout();
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="flex flex-col w-full h-full text-white font-poppins ">
+    <aside className="flex flex-col w-full h-full text-white font-poppins">
       <div className="p-8 flex items-center justify-between">
         <h2 className="text-[0.9rem] font-semibold tracking-[0.2em] uppercase">
           Menu
@@ -64,6 +71,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           );
         })}
       </nav>
+
+      <div className="p-4 border-t border-white/5 mt-auto">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center py-4 px-4 rounded-xl font-bold text-[0.85rem] text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all border-none cursor-pointer"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          <span>Logout Session</span>
+        </button>
+      </div>
     </aside>
   );
 };
