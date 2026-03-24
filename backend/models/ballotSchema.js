@@ -35,6 +35,4 @@ const ballotSchema = new mongoose.Schema({
     }
 });
 
-const Ballot = mongoose.model("Ballot", ballotSchema);
-
-export default Ballot;
+export default mongoose.model("Ballot", ballotSchema);

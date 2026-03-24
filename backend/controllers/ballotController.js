@@ -3,30 +3,56 @@ import Ballot from "../models/ballotSchema.js";
 import User from "../models/userSchema.js";
 import Position from "../models/positionSchema.js";
 import Candidate from "../models/candidateSchema.js";
+import Election from "../models/electionSchema.js";
+
+export const getActiveElection = async (req, res) => {
+    try {
+        const election = await Election.findOne({ isActive: true });
+        if (!election) return res.status(200).json(null);
+        res.json(election);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
 export const castBallot = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
-
     try {
         const { electionId, votes } = req.body;
-        const userId = req.user._id;
+        const userId = req.user.id;
 
         const user = await User.findById(userId).session(session);
         if (!user) throw new Error("User does not exist");
-        if (user.hasVoted) throw new Error("User has already voted");
 
-        user.hasVoted = true;
+        if (user.votedElections.includes(electionId)) {
+            throw new Error("You have already cast your vote in this election.");
+        }
+
+        const voteCountsByPosition = votes.reduce((acc, vote) => {
+            acc[vote.positionId] = (acc[vote.positionId] || 0) + 1;
+            return acc;
+        }, {});
+
+        for (const [positionId, count] of Object.entries(voteCountsByPosition)) {
+            const position = await Position.findById(positionId).session(session);
+            if (!position) throw new Error("Position not found");
+            if (count > position.maxVote) {
+                throw new Error(`Exceeded max votes for ${position.name}.`);
+            }
+        }
+
+        user.votedElections.push(electionId);
         await user.save({ session });
 
         const ballotVotes = votes.map(v => ({
-            position: mongoose.Types.ObjectId.isValid(v.positionId) ? new mongoose.Types.ObjectId(v.positionId) : v.positionId,
-            candidate: mongoose.Types.ObjectId.isValid(v.candidateId) ? new mongoose.Types.ObjectId(v.candidateId) : v.candidateId
+            position: new mongoose.Types.ObjectId(v.positionId),
+            candidate: new mongoose.Types.ObjectId(v.candidateId)
         }));
 
         const [ballot] = await Ballot.create([{
-            voter: user._id,
-            election: mongoose.Types.ObjectId.isValid(electionId) ? new mongoose.Types.ObjectId(electionId) : electionId,
+            voter: userId,
+            election: new mongoose.Types.ObjectId(electionId),
             votes: ballotVotes,
             submitted: true
         }], { session });
@@ -35,23 +61,27 @@ export const castBallot = async (req, res) => {
 
         const votedDetails = await Promise.all(
             votes.map(async (vote) => {
-                const candidate = await Candidate.findById(vote.candidateId).select("name");
-                const position = await Position.findById(vote.positionId).select("name");
+                const [cand, pos] = await Promise.all([
+                    Candidate.findById(vote.candidateId).select("name"),
+                    Position.findById(vote.positionId).select("name")
+                ]);
                 return {
-                    position: position?.name,
-                    candidate: candidate?.name
+                    position: pos?.name || "Unknown",
+                    candidate: cand?.name || "Unknown"
                 };
             })
         );
 
-        req.app.get('io')?.emit('newVoteCast', { message: "A new ballot has been submitted" });
+        req.app.get('io')?.emit('newVoteCast', {
+            electionId,
+            votes: votes.map(v => ({ positionId: v.positionId, candidateId: v.candidateId }))
+        });
 
         res.status(201).json({
             message: "Ballot cast successfully",
             voted: votedDetails,
             ballotId: ballot._id
         });
-
     } catch (error) {
         await session.abortTransaction();
         res.status(400).json({ error: error.message });
@@ -63,79 +93,123 @@ export const castBallot = async (req, res) => {
 export const getElectionResultsByPosition = async (req, res) => {
     try {
         const { electionId } = req.params;
-        const positions = await Position.find();
+        const eId = new mongoose.Types.ObjectId(electionId);
+        const positions = await Position.find({ election: eId });
 
         const resultsByPosition = await Promise.all(
             positions.map(async (pos) => {
-                const matchStage = { election: mongoose.Types.ObjectId.isValid(electionId) ? new mongoose.Types.ObjectId(electionId) : electionId };
+                const candidates = await Candidate.find({
+                    position: pos._id,
+                    election: eId
+                }).select("name department yearLevel");
 
-                if (pos.department !== "ALL") {
-                    const deptUsers = await User.find({ department: pos.department }).select("_id");
-                    matchStage.voter = { $in: deptUsers.map(u => u._id) };
-                }
-
-                const candidateVotes = await Ballot.aggregate([
-                    { $match: matchStage },
+                const voteCounts = await Ballot.aggregate([
+                    { $match: { election: eId } },
                     { $unwind: "$votes" },
-                    {
-                        $match: {
-                            $expr: {
-                                $eq: [
-                                    { $toString: "$votes.position" },
-                                    pos._id.toString()
-                                ]
-                            }
-                        }
-                    },
+                    { $match: { "votes.position": pos._id } },
                     {
                         $group: {
-                            _id: { $toString: "$votes.candidate" },
+                            _id: "$votes.candidate",
                             totalVotes: { $sum: 1 }
-                        }
-                    },
-                    {
-                        $lookup: {
-                            from: "candidates",
-                            let: { candidateId: "$_id" },
-                            pipeline: [
-                                { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$candidateId"] } } },
-                                { $project: { _id: 1, name: 1, department: 1, yearLevel: 1 } }
-                            ],
-                            as: "candidate"
-                        }
-                    },
-                    { $unwind: "$candidate" },
-                    {
-                        $project: {
-                            _id: 0,
-                            candidateId: "$candidate._id",
-                            name: "$candidate.name",
-                            department: "$candidate.department",
-                            yearLevel: "$candidate.yearLevel",
-                            totalVotes: 1
                         }
                     }
                 ]);
 
-                const totalVotes = candidateVotes.reduce((acc, c) => acc + c.totalVotes, 0);
-                const candidatesWithPercent = candidateVotes.map(c => ({
-                    ...c,
-                    percentage: totalVotes > 0 ? ((c.totalVotes / totalVotes) * 100).toFixed(2) : "0.00"
-                }));
+                const candidatesWithVotes = candidates.map(cand => {
+                    const voteData = voteCounts.find(v => v._id.toString() === cand._id.toString());
+                    return {
+                        candidateId: cand._id,
+                        name: cand.name,
+                        department: cand.department,
+                        yearLevel: cand.yearLevel,
+                        totalVotes: voteData ? voteData.totalVotes : 0
+                    };
+                });
+
+                const totalVotesForPosition = candidatesWithVotes.reduce((acc, c) => acc + c.totalVotes, 0);
 
                 return {
                     positionId: pos._id,
                     positionName: pos.name,
                     department: pos.department,
-                    maxVote: pos.maxVote,
-                    totalVotes,
-                    candidates: candidatesWithPercent
+                    totalVotes: totalVotesForPosition,
+                    candidates: candidatesWithVotes.map(c => ({
+                        ...c,
+                        percentage: totalVotesForPosition > 0
+                            ? ((c.totalVotes / totalVotesForPosition) * 100).toFixed(2)
+                            : "0.00"
+                    })).sort((a, b) => b.totalVotes - a.totalVotes)
+                };
+            })
+        );
+        res.json(resultsByPosition);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getElectionStats = async (req, res) => {
+    try {
+        const { electionId } = req.params;
+        const { dept } = req.query;
+
+        const userFilter = { role: 'voter', eligibleElections: electionId };
+        const candidateFilter = { election: electionId };
+
+        if (dept && dept !== 'ALL') {
+            userFilter.department = dept;
+            candidateFilter.department = dept;
+        }
+
+        const totalVoters = await User.countDocuments(userFilter);
+        const totalCandidates = await Candidate.countDocuments(candidateFilter);
+        const votedCount = await User.countDocuments({
+            ...userFilter,
+            votedElections: electionId
+        });
+
+        res.json({
+            totalVoters,
+            votedCount,
+            totalCandidates,
+            turnoutPercentage: totalVoters > 0 ? ((votedCount / totalVoters) * 100).toFixed(2) : "0.00"
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getBallot = async (req, res) => {
+    try {
+        const { electionId } = req.params;
+        const eId = new mongoose.Types.ObjectId(electionId);
+
+        const positions = await Position.find({ election: eId });
+
+        const ballotData = await Promise.all(
+            positions.map(async (pos) => {
+
+                const candidates = await Candidate.find({
+                    position: pos._id,
+                    election: eId
+                }).select("name profilePicture party department yearLevel");
+                return {
+                    positionId: pos._id,
+                    positionName: pos.name,
+                    maxVote: pos.maxVote || 1,
+                    candidates: candidates.map(cand => ({
+                        candidateId: cand._id,
+                        name: cand.name,
+                        profileImage: cand.profilePicture,
+                        party: cand.party || cand.partylist,
+                        department: cand.department,
+                        yearLevel: cand.yearLevel
+                    }))
                 };
             })
         );
 
-        res.json(resultsByPosition);
-
+        res.json(ballotData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
