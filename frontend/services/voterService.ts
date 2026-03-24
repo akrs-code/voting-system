@@ -13,7 +13,6 @@ api.interceptors.request.use((config) => {
 });
 
 export const voterService = {
-
   getAll: async () => {
     const response = await api.get('/voters'); 
     return response.data;

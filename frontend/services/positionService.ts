@@ -21,8 +21,10 @@ export const positionService = {
     return response.data;
   },
 
-  getPositions: async (dept: string, electionId: string) => {
-    const response = await API.get(`/${dept}`, { params: { electionId } });
+  getPositions: async (dept: string, electionId?: string) => {
+    const response = await API.get(`/${dept}`, { 
+      params: { electionId: electionId || undefined } 
+    });
     return response.data;
   },
 
@@ -30,6 +32,7 @@ export const positionService = {
     const response = await API.get("/voting-form");
     return response.data;
   },
+
   update: async (id: string, data: any) => {
     const response = await API.put(`/${id}`, data);
     return response.data;
