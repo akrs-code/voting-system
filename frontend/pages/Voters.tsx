@@ -158,10 +158,7 @@ const Voters = () => {
             className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
           >
             <option value="all">All Year Levels</option>
-            <option value="1">1st Year</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
+            {[1, 2, 3, 4].map(lvl => <option key={lvl} value={lvl}>{lvl} Year</option>)}
           </select>
         </div>
       </div>
@@ -176,14 +173,6 @@ const Voters = () => {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
             <p className="text-slate-400 font-medium">No matching student records found.</p>
-            {(statusFilter !== 'all' || yearFilter !== 'all') && (
-              <button
-                onClick={() => { setStatusFilter('all'); setYearFilter('all'); }}
-                className="mt-4 text-[#2f318d] text-xs font-bold uppercase tracking-wider hover:underline"
-              >
-                Clear all filters
-              </button>
-            )}
           </div>
         ) : (
           <>
@@ -208,16 +197,12 @@ const Voters = () => {
                       </td>
                       <td className="px-10 py-4 text-center">
                         <div className="flex justify-center gap-2 items-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex flex-row items-center justify-center gap-2">
-                              <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
-                                {voter.department}
-                              </span>
-                              <span className="text-slate-400 text-[11px] font-semibold">
-                                {voter.yearLevel ? `Year ${voter.yearLevel}` : 'Open Level'}
-                              </span>
-                            </div>
-                          </div>
+                          <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
+                            {voter.department}
+                          </span>
+                          <span className="text-slate-400 text-[11px] font-semibold">
+                            {voter.yearLevel ? `Year ${voter.yearLevel}` : 'Open Level'}
+                          </span>
                         </div>
                       </td>
                       <td className="px-10 py-4 text-center">
@@ -262,7 +247,7 @@ const Voters = () => {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-slate-800">{isEditing ? 'Update Student' : 'Register Student'}</h2>
               <p className="text-sm text-slate-500 mt-1">
-                {isEditing ? 'Modify institutional record.' : 'Firstname in lowercase will be their initial password.'}
+                {isEditing ? 'Modify institutional record.' : 'The first name in lowercase will be their initial password.'}
               </p>
             </div>
             <Formik
@@ -309,7 +294,6 @@ const Voters = () => {
                       <Field as="select" name="department" className="h-14 w-full border border-slate-200 bg-slate-50/50 px-4 rounded-2xl text-sm font-bold text-[#2f318d] outline-none">
                         <option value="DIS">DIS</option>
                         <option value="DCS">DCS</option>
-                        <option value="ALL">ALL</option>
                       </Field>
                     </div>
                     <div className="space-y-2">

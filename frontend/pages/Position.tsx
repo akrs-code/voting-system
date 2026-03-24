@@ -15,7 +15,7 @@ interface Position {
   maxVote: number;
   department: "DIS" | "DCS" | "ALL";
   yearLevel: number | null;
-  election: string;
+  election: any;
 }
 
 const Positions = () => {
@@ -48,13 +48,15 @@ const Positions = () => {
       setPositions(posData);
       setElections(elData);
     } catch (error) {
-      console.error(error);
+      console.error("Fetch Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [selectedElectionId]);
+  useEffect(() => {
+    fetchData();
+  }, [selectedElectionId]);
 
   const filteredPositions = useMemo(() => {
     return positions.filter(pos => {
@@ -71,42 +73,47 @@ const Positions = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure? This will delete associated candidates.")) {
+    if (window.confirm("Delete this position? This will also remove associated candidates.")) {
       try {
         await positionService.delete(id);
         fetchData();
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) {
+        alert("Delete operation failed.");
+      }
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-10 font-poppins">
+    <div className="max-w-7xl mx-auto p-6 space-y-10 font-poppins text-slate-800">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 px-2">
         <div>
           <h2 className="text-[0.75rem] font-bold tracking-[0.07rem] text-[#2f318d] uppercase opacity-80 mb-1">MSU CICS Administration</h2>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Electoral Positions</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage {filteredPositions.length} roles and eligibility scopes.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Electoral Positions</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Manage {filteredPositions.length} configured roles for the student body.
+          </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="h-12 bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-[0.98] font-bold text-sm"
-        >
-          <Plus size={18} /> Add New Position
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => handleOpenModal()}
+            className="h-12 bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-[0.98] font-bold text-sm"
+          >
+            <Plus size={18} /> Add New Position
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
         <div className="relative group md:col-span-2">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d]" size={18} />
           <input
             type="text"
-            placeholder="Search by position name..."
+            placeholder="Search position name..."
             className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
         <div className="relative">
           <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
           <select
@@ -118,7 +125,6 @@ const Positions = () => {
             {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
           </select>
         </div>
-
         <div className="relative">
           <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
           <select
@@ -133,7 +139,7 @@ const Positions = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24">
             <Loader2 className="w-10 h-10 animate-spin text-[#2f318d] mb-4 opacity-40" />
@@ -142,47 +148,46 @@ const Positions = () => {
         ) : filteredPositions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">No matching electoral positions found.</p>
+            <p className="text-slate-400 font-medium">No matching positions found.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30">
-                  <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Position Details</th>
-                  <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">SCOPE</th>
-                  <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Vote Limit</th>
-                  <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
+                  <th className="px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Position Details</th>
+                  <th className="px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">SCOPE</th>
+                  <th className="px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Vote Limit</th>
+                  <th className="px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredPositions.map((pos) => (
                   <tr key={pos._id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-10 py-4">
+                    <td className="px-10 py-5">
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 text-[0.95rem]">{pos.name}</span>
+                        <span className="font-bold text-slate-800 text-[1rem]">{pos.name}</span>
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          {pos.election?.title || 'Unassigned Election'}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-10 py-4 text-center">
+                    <td className="px-10 py-5 text-center">
                       <div className="flex justify-center gap-2 items-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex flex-row items-center justify-center gap-2">
-                            <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
-                              {pos.department}
-                            </span>
-                            <span className="text-slate-400 text-[11px] font-semibold">
-                              {pos.yearLevel ? `Year ${pos.yearLevel}` : 'Open Level'}
-                            </span>
-                          </div>
-                        </div>
+                        <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase">
+                          {pos.department}
+                        </span>
+                        <span className="text-slate-400 text-[11px] font-semibold">
+                          {pos.yearLevel ? `Year ${pos.yearLevel}` : 'All Levels'}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-10 py-4 text-center">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-600 border-slate-100 rounded-full border font-bold text-[10px]">
+                    <td className="px-10 py-5 text-center">
+                      <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-600 border-slate-100 rounded-full border font-bold text-[10px]">
                         {pos.maxVote} MAX
                       </span>
                     </td>
-                    <td className="px-10 py-4 text-right">
+                    <td className="px-10 py-5 text-right">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleOpenModal(pos)} className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm">
                           <Edit3 size={16} />
@@ -201,14 +206,14 @@ const Positions = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
           <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 relative border border-white/20">
             <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 text-slate-400 hover:text-slate-600 transition-colors">
               <X size={20} />
             </button>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-800">{isEditing ? 'Update Position' : 'Create Position'}</h2>
-              <p className="text-sm text-slate-500 mt-1">Configure position scope and constraints.</p>
+              <h2 className="text-2xl font-bold text-slate-800">{isEditing ? 'Update Position' : 'New Position'}</h2>
+              <p className="text-sm text-slate-500 mt-1">Configure position scope and voting rules.</p>
             </div>
 
             <Formik
@@ -218,17 +223,32 @@ const Positions = () => {
                 maxVote: selectedPos?.maxVote || 1,
                 department: selectedPos?.department || 'ALL',
                 yearLevel: selectedPos?.yearLevel || '',
-                electionId: selectedPos?.election || selectedElectionId || '',
+                electionId: selectedPos?.election?._id || selectedPos?.election || selectedElectionId || '',
               }}
               validationSchema={validationSchema}
               onSubmit={async (values, { setSubmitting }) => {
                 try {
-                  const payload = { ...values, yearLevel: values.yearLevel === "" ? null : Number(values.yearLevel) };
-                  if (isEditing && selectedPos) await positionService.update(selectedPos._id, payload);
-                  else await positionService.create(payload);
+                  const payload = {
+                    name: values.name,
+                    maxVote: values.maxVote,
+                    department: values.department,
+                    yearLevel: values.yearLevel === "" ? null : Number(values.yearLevel),
+                    election: values.electionId 
+                  };
+
+                  if (isEditing && selectedPos) {
+                    await positionService.update(selectedPos._id, payload);
+                  } else {
+                    await positionService.create(payload);
+                  }
+                  
                   setShowModal(false);
                   fetchData();
-                } catch (err) { alert("Action failed"); } finally { setSubmitting(false); }
+                } catch (err) {
+                  alert("Operation failed. Please try again.");
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
               {({ isSubmitting, errors, touched }) => (
@@ -290,7 +310,7 @@ const Positions = () => {
                     ) : (
                       <>
                         <CheckCircle2 size={20} />
-                        <span>{isEditing ? 'Update Position' : 'Create Position'}</span>
+                        <span>{isEditing ? 'Save Changes' : 'Confirm Position'}</span>
                       </>
                     )}
                   </button>

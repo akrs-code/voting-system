@@ -51,8 +51,9 @@ const Candidates = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const dept = selectedDepartment || "ALL";
       const [candData, elData, posData] = await Promise.all([
-        candidateService.getAll("ALL", selectedElectionId),
+        candidateService.getAll(dept, selectedElectionId),
         electionService.getAll(),
         positionService.getPositions("ALL", selectedElectionId)
       ]);
@@ -68,7 +69,7 @@ const Candidates = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedElectionId, showModal]);
+  }, [selectedElectionId, selectedDepartment, showModal]);
 
   const filteredCandidates = useMemo(() => {
     setCurrentPage(1);
@@ -78,10 +79,9 @@ const Candidates = () => {
         c.partylist.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.position?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesDept = !selectedDepartment || c.department === selectedDepartment;
-      return matchesSearch && matchesDept;
+      return matchesSearch;
     });
-  }, [candidates, searchTerm, selectedDepartment]);
+  }, [candidates, searchTerm]);
 
   const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
   const currentCandidates = filteredCandidates.slice(
@@ -282,7 +282,7 @@ const Candidates = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div className="md:col-span-2 flex justify-center mb-4">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                           <div className="w-100 h-60 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#2f318d] group-hover:bg-indigo-50">
+                           <div className="w-40 h-40 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#2f318d] group-hover:bg-indigo-50">
                                 {selectedCand?.profilePicture ? (
                                     <img src={selectedCand.profilePicture} className="w-full h-full object-cover" alt="preview" />
                                 ) : (
@@ -324,13 +324,20 @@ const Candidates = () => {
                       <label className="text-sm font-semibold text-slate-700 ml-1">Department Scope</label>
                       <Field as="select" name="department" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
                         <option value="ALL">ALL (College-wide)</option>
-                        <option value="DIS">DIS (Info Systems)</option>
-                        <option value="DCS">DCS (Comp Science)</option>
+                        <option value="DIS">DIS (Information Tech&Systems)</option>
+                        <option value="DCS">DCS (Computer Science)</option>
                       </Field>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Year Level</label>
-                      <Field type="number" name="yearLevel" placeholder="1-4" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d]" />
+                      <label className="text-sm font-semibold text-slate-700 ml-1">Year Level (only for representative)</label>
+                       <Field as="select"
+                        name="yearLevel" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
+                        <option value="null"></option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">3rd Year</option>
+                      </Field>
                     </div>
                   </div>
                   <button type="submit" disabled={isSubmitting} className="h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-4 shadow-lg shadow-indigo-100">
