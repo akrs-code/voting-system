@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        unique: true
+        trim: true
     },
 
     password: {
@@ -15,7 +15,8 @@ const userSchema = new mongoose.Schema({
     studentId: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
     },
 
     department: {
@@ -36,10 +37,10 @@ const userSchema = new mongoose.Schema({
         default: "voter"
     },
 
-    hasVoted: {
-        type: Boolean,
-        default: false
-    }
+    votedElections: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Election"
+    }]
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

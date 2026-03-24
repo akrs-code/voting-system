@@ -10,7 +10,8 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: "Student ID and password are required" });
         }
 
-        const user = await User.findOne({ studentId });
+        const normalizedId = studentId.trim().toLowerCase();
+        const user = await User.findOne({ studentId: normalizedId });
 
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
@@ -37,7 +38,7 @@ export const login = async (req, res) => {
                 department: user.department,
                 yearLevel: user.yearLevel,
                 role: user.role,
-                hasVoted: user.hasVoted,
+                votedElections: user.votedElections
             },
         });
     } catch (error) {
@@ -53,7 +54,9 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "All required fields must be filled" });
         }
 
-        const existingUser = await User.findOne({ studentId });
+        const normalizedId = studentId.trim().toLowerCase();
+        const existingUser = await User.findOne({ studentId: normalizedId });
+        
         if (existingUser) {
             return res.status(400).json({ error: "User with this Student ID already exists" });
         }
@@ -61,8 +64,8 @@ export const signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = await User.create({
-            name,
-            studentId,
+            name: name.trim(),
+            studentId: normalizedId,
             password: hashedPassword,
             department,
             yearLevel,
@@ -81,22 +84,24 @@ export const signup = async (req, res) => {
 export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, studentId, password, department, yearLevel, role, hasVoted } = req.body;
+        const { name, studentId, password, department, yearLevel, role } = req.body;
 
         const user = await User.findById(id);
         if (!user) return res.status(404).json({ error: "User not found" });
 
-        if (studentId && studentId !== user.studentId) {
-            const existingUser = await User.findOne({ studentId });
-            if (existingUser) return res.status(400).json({ error: "New Student ID already in use" });
-            user.studentId = studentId;
+        if (studentId) {
+            const normalizedId = studentId.trim().toLowerCase();
+            if (normalizedId !== user.studentId) {
+                const existingUser = await User.findOne({ studentId: normalizedId });
+                if (existingUser) return res.status(400).json({ error: "New Student ID already in use" });
+                user.studentId = normalizedId;
+            }
         }
 
-        if (name) user.name = name;
+        if (name) user.name = name.trim();
         if (department) user.department = department;
         if (yearLevel) user.yearLevel = yearLevel;
         if (role) user.role = role;
-        if (hasVoted !== undefined) user.hasVoted = hasVoted;
 
         if (password && typeof password === 'string' && password.trim() !== "") {
             user.password = await bcrypt.hash(password, 10);
@@ -129,7 +134,6 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-
 export const bulkSignup = async (req, res) => {
     try {
         const users = req.body;
@@ -138,39 +142,29 @@ export const bulkSignup = async (req, res) => {
             return res.status(400).json({ error: "Payload must be a non-empty array of users" });
         }
 
-        const studentIds = users.map((u) => u.studentId);
-
-        const existingUsers = await User.find({
-            studentId: { $in: studentIds }
-        }).select("studentId");
-
+        const studentIds = users.map((u) => u.studentId?.trim().toLowerCase());
+        const existingUsers = await User.find({ studentId: { $in: studentIds } }).select("studentId");
         const existingIdSet = new Set(existingUsers.map((u) => u.studentId));
 
         const skipped = [];
-
         const toInsert = await Promise.all(
             users.map(async (user) => {
-                if (!user.studentId || !user.password || !user.name) {
-                    skipped.push({
-                        studentId: user.studentId || "Unknown",
-                        reason: "Missing required fields"
-                    });
+                const normalizedId = user.studentId?.trim().toLowerCase();
+                if (!normalizedId || !user.password || !user.name) {
+                    skipped.push({ studentId: normalizedId || "Unknown", reason: "Missing required fields" });
                     return null;
                 }
 
-                if (existingIdSet.has(user.studentId)) {
-                    skipped.push({
-                        studentId: user.studentId,
-                        reason: "Already exists"
-                    });
+                if (existingIdSet.has(normalizedId)) {
+                    skipped.push({ studentId: normalizedId, reason: "Already exists" });
                     return null;
                 }
 
                 const hashedPassword = await bcrypt.hash(user.password, 10);
 
                 return {
-                    name: user.name,
-                    studentId: user.studentId,
+                    name: user.name.trim(),
+                    studentId: normalizedId,
                     password: hashedPassword,
                     department: user.department,
                     yearLevel: user.yearLevel,
@@ -180,7 +174,6 @@ export const bulkSignup = async (req, res) => {
         );
 
         const filteredUsers = toInsert.filter(Boolean);
-
         let result = [];
         if (filteredUsers.length > 0) {
             result = await User.insertMany(filteredUsers, { ordered: false });
@@ -195,12 +188,7 @@ export const bulkSignup = async (req, res) => {
             },
             skippedDetails: skipped
         });
-
     } catch (error) {
-        res.status(500).json({
-            error: "Bulk signup failed",
-            details: error.message
-        });
+        res.status(500).json({ error: "Bulk signup failed", details: error.message });
     }
-
 };
