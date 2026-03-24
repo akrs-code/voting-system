@@ -1,10 +1,17 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyToken.js';
-import { castBallot, getElectionResultsByPosition } from '../controllers/ballotController.js';
+import { 
+    castBallot, 
+    getBallot, 
+    getElectionResultsByPosition, 
+    getElectionStats 
+} from '../controllers/ballotController.js';
 
 const router = express.Router();
 
-router.post('/submit', verifyToken, castBallot);
-router.get('/results/:electionId/positions', verifyToken, getElectionResultsByPosition);
+router.post('/cast', verifyToken, castBallot);
+router.get('/results/:electionId', verifyToken, getElectionResultsByPosition);
+router.get('/stats/:electionId', verifyToken, getElectionStats);
+router.get('/:electionId/ballot', verifyToken, getBallot);
 
-export default router; 
+export default router;

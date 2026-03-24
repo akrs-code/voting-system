@@ -2,6 +2,7 @@ import express from "express";
 import { verifyToken } from '../middleware/verifyToken.js';
 import { authorizeRole } from '../middleware/authorizeRole.js';
 import { bulkSignup, deleteUser, login, signup, updateUser, getAllUsers } from "../controllers/authController.js";
+import { limiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
