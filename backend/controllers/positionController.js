@@ -4,9 +4,9 @@ import Election from "../models/electionSchema.js";
 
 export const createPosition = async (req, res) => {
     try {
-        const { name, maxVote, department, yearLevel, electionId } = req.body;
+        const { name, maxVote, department, yearLevel, election } = req.body;
 
-        if (!electionId) {
+        if (!election) {
             return res.status(400).json({ error: "electionId is required" });
         }
 
@@ -15,7 +15,7 @@ export const createPosition = async (req, res) => {
             maxVote, 
             department, 
             yearLevel, 
-            election: electionId 
+            election
         });
 
         res.status(201).json(position);
@@ -29,23 +29,28 @@ export const getPositionsByDepartment = async (req, res) => {
         const { department } = req.params;
         const { electionId, search, yearLevel } = req.query; 
         
-        // 1. Base query: Match specific dept OR "ALL"
-        let query = {
-            $or: [{ department: department }, { department: "ALL" }]
-        };
+        let query = {};
+
+        if (department !== 'ALL') {
+            query.$or = [{ department: department }, { department: "ALL" }];
+        }
         
-        // 2. Filter by Election
-        if (electionId) query.election = electionId;
+        if (electionId) {
+            query.election = electionId;
+        }
 
-        // 3. Filter by Year Level (if specifically requested)
-        if (yearLevel) query.yearLevel = yearLevel;
+        if (yearLevel) {
+            query.yearLevel = yearLevel;
+        }
 
-        // 4. Search by Name (Case-insensitive)
         if (search) {
             query.name = { $regex: search, $options: 'i' };
         }
 
-        const positions = await Position.find(query).populate('election', 'title');
+        const positions = await Position.find(query)
+            .populate('election', 'title')
+            .sort({ createdAt: -1 }); 
+
         res.status(200).json(positions);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -100,7 +105,7 @@ export const getVotingForm = async (req, res) => {
 export const updatePosition = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, maxVote, department, yearLevel, electionId } = req.body;
+        const { name, maxVote, department, yearLevel, election } = req.body;
 
         const updatedPosition = await Position.findByIdAndUpdate(
             id,
@@ -109,7 +114,7 @@ export const updatePosition = async (req, res) => {
                 maxVote, 
                 department, 
                 yearLevel, 
-                election: electionId 
+                election
             },
             { new: true, runValidators: true }
         );
@@ -140,3 +145,5 @@ export const deletePosition = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+

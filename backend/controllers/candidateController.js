@@ -57,7 +57,7 @@ export const getCandidatesByDepartment = async (req, res) => {
         }
 
         if (department && department !== "ALL") {
-            query.$or = [{ department: department }, { department: "ALL" }];
+            query.department = department;
         }
 
         const candidates = await Candidate.find(query)
