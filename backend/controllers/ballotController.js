@@ -192,7 +192,7 @@ export const getBallot = async (req, res) => {
                 const candidates = await Candidate.find({
                     position: pos._id,
                     election: eId
-                }).select("name profilePicture party department yearLevel");
+                }).select("name profilePicture partylist department yearLevel");
                 return {
                     positionId: pos._id,
                     positionName: pos.name,
@@ -201,9 +201,9 @@ export const getBallot = async (req, res) => {
                         candidateId: cand._id,
                         name: cand.name,
                         profileImage: cand.profilePicture,
-                        party: cand.party || cand.partylist,
                         department: cand.department,
-                        yearLevel: cand.yearLevel
+                        yearLevel: cand.yearLevel,
+                        partylist: cand.partylist
                     }))
                 };
             })
