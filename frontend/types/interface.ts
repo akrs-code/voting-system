@@ -48,3 +48,14 @@ export interface Election {
   endDate: string;
   isActive: boolean;
 }
+
+export interface Candidate {
+  _id: string;
+  name: string;
+  partylist: string;
+  department: "DIS" | "DCS" | "ALL";
+  yearLevel: number | null;
+  position: { _id: string; name: string };
+  election: { _id: string; title: string };
+  profilePicture?: string;
+}
