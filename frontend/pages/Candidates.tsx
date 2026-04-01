@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Search,
   Building2, Briefcase, Camera
 } from 'lucide-react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form, Field, ErrorMessage, useFormikContext } from 'formik';
 import * as Yup from 'yup';
 import { candidateService } from '../services/candidateService';
 import { positionService } from '../services/positionService';
@@ -22,10 +22,19 @@ interface Candidate {
   profilePicture?: string;
 }
 
+const FormWatcher = ({ onElectionChange }: { onElectionChange: (id: string) => void }) => {
+  const { values } = useFormikContext<{ electionId: string }>();
+  useEffect(() => {
+    onElectionChange(values.electionId);
+  }, [values.electionId, onElectionChange]);
+  return null;
+};
+
 const Candidates = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [elections, setElections] = useState<any[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
+  const [modalPositions, setModalPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +73,19 @@ const Candidates = () => {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleElectionChangeInModal = async (electionId: string) => {
+    if (!electionId) {
+      setModalPositions([]);
+      return;
+    }
+    try {
+      const data = await positionService.getPositions("ALL", electionId);
+      setModalPositions(data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -277,8 +299,9 @@ const Candidates = () => {
                 }
               }}
             >
-              {({ isSubmitting, errors, touched }) => (
+              {({ isSubmitting, errors, touched, values }) => (
                 <Form className="space-y-6">
+                  <FormWatcher onElectionChange={handleElectionChangeInModal} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div className="md:col-span-2 flex justify-center mb-4">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -316,8 +339,8 @@ const Candidates = () => {
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-slate-700 ml-1">Target Position</label>
                       <Field as="select" name="position" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
-                        <option value="">Select Position...</option>
-                        {positions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
+                        <option value="">{values.electionId ? "Select Position..." : "Pick an Election first"}</option>
+                        {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
                       </Field>
                     </div>
                     <div className="space-y-2">
@@ -336,7 +359,7 @@ const Candidates = () => {
                         <option value="1">1st Year</option>
                         <option value="2">2nd Year</option>
                         <option value="3">3rd Year</option>
-                        <option value="4">3rd Year</option>
+                        <option value="4">4th Year</option>
                       </Field>
                     </div>
                   </div>

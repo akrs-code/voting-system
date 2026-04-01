@@ -14,15 +14,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { voterService } from '../services/voterService';
 import Pagination from '../components/Pagination';
-
-interface Voter {
-  _id: string;
-  studentId: string;
-  name: string;
-  department: "DIS" | "DCS" | "ALL";
-  yearLevel: number;
-  hasVoted: boolean;
-}
+import { Voter } from 'types/interface';
 
 const Voters = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -44,8 +36,21 @@ const Voters = () => {
     studentId: Yup.string()
       .matches(/^202\d{6}$/, "Institutional ID must start with 202 and be 9 digits")
       .required("Institutional ID is required"),
-    department: Yup.string().required("Department is required"),
-    yearLevel: Yup.number().required("Year level is required"),
+    email: Yup.string()
+      .email("Invalid email format")
+      .required("Email is required"),
+    department: Yup.string()
+      .oneOf(['DIS', 'DCS'], "Select a valid department")
+      .required("Department is required"),
+    yearLevel: Yup.number()
+      .oneOf([1, 2, 3, 4], "Select a valid year level")
+      .required("Year level is required"),
+    password: Yup.string().when([], {
+      is: () => !isEditing,
+      then: (schema) =>
+        schema.min(4, "Password too short").required("Password is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
 
   const fetchVoters = async () => {
@@ -83,7 +88,8 @@ const Voters = () => {
     if (!window.confirm("Are you sure you want to permanently delete this student record?")) return;
     try {
       await voterService.delete(id);
-      setVoters(v => v.filter(item => item._id !== id));
+      setVoters(prev => prev.filter(item => item._id !== id));
+
     } catch (error) {
       alert("Delete failed. Please try again.");
     }
@@ -100,11 +106,19 @@ const Voters = () => {
     });
   }, [voters, searchQuery, statusFilter, yearFilter]);
 
-  const totalPages = Math.ceil(filteredVoters.length / itemsPerPage);
-  const currentVoters = filteredVoters.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+
+  const totalPages = Math.max(Math.ceil(filteredVoters.length / itemsPerPage), 1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const currentVoters = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredVoters.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredVoters, currentPage]);
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-10 font-poppins">
@@ -247,7 +261,7 @@ const Voters = () => {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-slate-800">{isEditing ? 'Update Student' : 'Register Student'}</h2>
               <p className="text-sm text-slate-500 mt-1">
-                {isEditing ? 'Modify institutional record.' : 'The first name in lowercase will be their initial password.'}
+                {isEditing ? 'Modify institutional record.' : 'Set login credentials for the student.'}
               </p>
             </div>
             <Formik
@@ -255,17 +269,20 @@ const Voters = () => {
               initialValues={{
                 name: selectedVoter?.name || '',
                 studentId: selectedVoter?.studentId || '',
+                email: selectedVoter?.email || '',
                 department: selectedVoter?.department || 'DIS',
                 yearLevel: selectedVoter?.yearLevel || 1,
+                password: '',
               }}
               validationSchema={validationSchema}
               onSubmit={async (values, { setSubmitting }) => {
                 try {
                   if (isEditing && selectedVoter) {
-                    await voterService.update(selectedVoter._id, values);
+                    const payload: any = { ...values };
+                    if (!values.password) delete payload.password;
+                    await voterService.update(selectedVoter._id, payload);
                   } else {
-                    const initialPassword = values.name.trim().split(' ')[0].toLowerCase();
-                    await voterService.create({ ...values, password: initialPassword });
+                    await voterService.create(values);
                   }
                   setShowModal(false);
                   await fetchVoters();
@@ -288,9 +305,43 @@ const Voters = () => {
                     <Field name="studentId" placeholder="202XXXXXX" className={`h-14 w-full border px-5 rounded-2xl outline-none transition-all ${errors.studentId && touched.studentId ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
                     <ErrorMessage name="studentId" component="div" className="text-xs text-red-500 font-bold ml-2" />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Email</label>
+                    <Field
+                      name="email"
+                      type="email"
+                      placeholder="student@email.com"
+                      className={`h-14 w-full border px-5 rounded-2xl outline-none transition-all ${errors.email && touched.email
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-slate-200 focus:border-[#2f318d]'
+                        }`}
+                    />
+                    <ErrorMessage
+                      name="email"
+                      component="div"
+                      className="text-xs text-red-500 font-bold ml-2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Password</label>
+                    <Field
+                      name="password"
+                      type="password"
+                      placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
+                      className={`h-14 w-full border px-5 rounded-2xl outline-none transition-all ${errors.password && touched.password
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-slate-200 focus:border-[#2f318d]'
+                        }`}
+                    />
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-xs text-red-500 font-bold ml-2"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Dept.</label>
+                      <label className="text-sm font-semibold text-slate-700">Department</label>
                       <Field as="select" name="department" className="h-14 w-full border border-slate-200 bg-slate-50/50 px-4 rounded-2xl text-sm font-bold text-[#2f318d] outline-none">
                         <option value="DIS">DIS</option>
                         <option value="DCS">DCS</option>

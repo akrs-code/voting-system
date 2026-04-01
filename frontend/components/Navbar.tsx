@@ -12,7 +12,6 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 font-poppins">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 
-                {/* Left: Branding */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onMenuClick}
@@ -32,7 +31,6 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     </div>
                 </div>
 
-                {/* Right: Live Status Indicator */}
                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
                     <div className="relative flex h-2 w-2">
                         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeElection ? 'bg-emerald-400' : 'bg-slate-400'}`}></span>

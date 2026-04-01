@@ -4,6 +4,7 @@ export interface User {
   studentId: string;
   department: 'DIS' | 'DCS';
   yearLevel: 1 | 2 | 3 | 4;
+  email: string;
   role: 'admin' | 'voter';
   hasVoted: boolean;
   createdAt?: string;
@@ -19,6 +20,25 @@ export interface AuthResponse {
 export interface LoginCredentials {
   studentId: string;
   password?: string;
+}
+
+export interface Election {
+  _id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+
+export interface Voter {
+  _id: string;
+  studentId: string;
+  name: string;
+  department: "DIS" | "DCS" | "ALL";
+  yearLevel: number;
+  email: string;
+  hasVoted: boolean;
 }
 
 export interface Election {

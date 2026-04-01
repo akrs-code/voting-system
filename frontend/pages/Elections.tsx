@@ -6,14 +6,7 @@ import {
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { electionService } from '../services/electionService';
-
-interface Election {
-  _id: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-}
+import { Election } from 'types/interface';
 
 const Elections = () => {
   const [elections, setElections] = useState<Election[]>([]);

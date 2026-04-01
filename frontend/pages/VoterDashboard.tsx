@@ -13,8 +13,8 @@ const VoterDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [showReview, setShowReview] = useState(false); // New state for Review
-
+  const [showReview, setShowReview] = useState(false);
+  
   useEffect(() => {
     const initDashboard = async () => {
       if (activeElection && user) {
