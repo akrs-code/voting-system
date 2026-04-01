@@ -71,8 +71,8 @@ export default function Login() {
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={`h-14 w-full border px-5 text-[1rem] rounded-2xl transition-all duration-200 outline-none font-medium ${errors.studentId && touched.studentId
-                    ? "border-red-300 bg-red-50/30 ring-4 ring-red-50"
-                    : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"
+                  ? "border-red-300 bg-red-50/30 ring-4 ring-red-50"
+                  : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"
                   }`}
               />
               <ErrorMessage name="studentId" component="p" className="text-xs text-red-500 font-medium ml-1" />
@@ -92,8 +92,8 @@ export default function Login() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={`h-14 w-full border px-5 pr-12 text-[1rem] rounded-2xl transition-all duration-200 outline-none font-medium ${errors.password && touched.password
-                      ? "border-red-300 bg-red-50/30 ring-4 ring-red-50"
-                      : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"
+                    ? "border-red-300 bg-red-50/30 ring-4 ring-red-50"
+                    : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"
                     }`}
                 />
                 <button
@@ -169,7 +169,7 @@ export default function Login() {
                 <div className="flex gap-4">
                   <div className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-[#2f318d] flex items-center justify-center text-xs font-bold">2</div>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    Password is your <span className="font-bold text-slate-800 underline decoration-indigo-200 underline-offset-4">firstname</span> in all lowercase letters.
+                    Use the <span className="font-bold text-slate-800">password we sent on your institutional email </span> to log in.
                   </p>
                 </div>
               </div>

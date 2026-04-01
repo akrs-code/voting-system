@@ -10,7 +10,7 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: "Student ID and password are required" });
         }
 
-        const normalizedId = studentId.trim().toLowerCase();
+        const normalizedId = studentId.trim();
         const user = await User.findOne({ studentId: normalizedId });
 
         if (!user) {
@@ -38,6 +38,7 @@ export const login = async (req, res) => {
                 department: user.department,
                 yearLevel: user.yearLevel,
                 role: user.role,
+                email: user.email,
                 votedElections: user.votedElections
             },
         });
@@ -48,15 +49,15 @@ export const login = async (req, res) => {
 
 export const signup = async (req, res) => {
     try {
-        const { name, studentId, password, department, yearLevel, role } = req.body;
+        const { name, studentId, password, department, yearLevel, role, email } = req.body;
 
-        if (!name || !studentId || !password || !department || !yearLevel) {
+        if (!name || !studentId || !password || !department || !yearLevel || !email) {
             return res.status(400).json({ error: "All required fields must be filled" });
         }
 
-        const normalizedId = studentId.trim().toLowerCase();
+        const normalizedId = studentId.trim();
         const existingUser = await User.findOne({ studentId: normalizedId });
-        
+
         if (existingUser) {
             return res.status(400).json({ error: "User with this Student ID already exists" });
         }
@@ -69,6 +70,7 @@ export const signup = async (req, res) => {
             password: hashedPassword,
             department,
             yearLevel,
+            email,
             role: role || "voter",
         });
 
@@ -84,7 +86,7 @@ export const signup = async (req, res) => {
 export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, studentId, password, department, yearLevel, role } = req.body;
+        const { name, studentId, password, department, yearLevel, role, email } = req.body;
 
         const user = await User.findById(id);
         if (!user) return res.status(404).json({ error: "User not found" });
@@ -102,6 +104,7 @@ export const updateUser = async (req, res) => {
         if (department) user.department = department;
         if (yearLevel) user.yearLevel = yearLevel;
         if (role) user.role = role;
+        if (email) user.email = email;
 
         if (password && typeof password === 'string' && password.trim() !== "") {
             user.password = await bcrypt.hash(password, 10);
@@ -168,6 +171,7 @@ export const bulkSignup = async (req, res) => {
                     password: hashedPassword,
                     department: user.department,
                     yearLevel: user.yearLevel,
+                    email: user.email,
                     role: user.role || "voter"
                 };
             })

@@ -19,9 +19,16 @@ const userSchema = new mongoose.Schema({
         trim: true,
     },
 
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
+
     department: {
         type: String,
-        enum: ["DIS", "DCS", "ALL"],
+        enum: ["DIS", "DCS"],
         required: true
     },
 
