@@ -4,6 +4,7 @@ import User from "../models/userSchema.js";
 import Position from "../models/positionSchema.js";
 import Candidate from "../models/candidateSchema.js";
 import Election from "../models/electionSchema.js";
+import { sendVoteEmail } from "../utils/emailHelper.js";
 
 export const getActiveElection = async (req, res) => {
     try {
@@ -57,6 +58,8 @@ export const castBallot = async (req, res) => {
             submitted: true
         }], { session });
 
+        const election = await Election.findById(electionId).session(session);
+
         await session.commitTransaction();
 
         const votedDetails = await Promise.all(
@@ -66,11 +69,18 @@ export const castBallot = async (req, res) => {
                     Position.findById(vote.positionId).select("name")
                 ]);
                 return {
-                    position: pos?.name || "Unknown",
-                    candidate: cand?.name || "Unknown"
+                    positionName: pos?.name || "Unknown",
+                    candidateName: cand?.name || "Unknown"
                 };
             })
         );
+
+        sendVoteEmail(
+            user.email,
+            user.firstName || user.name || "Voter",
+            election?.title || "MSU CICS Election",
+            votedDetails
+        ).catch(err => console.error("Email Receipt Error:", err));
 
         req.app.get('io')?.emit('newVoteCast', {
             electionId,
