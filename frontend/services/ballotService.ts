@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
+  // Ensure your .env has the trailing /api if your backend expects it
   baseURL: (import.meta as any).env.VITE_API_URL + "/ballot",
 });
 
@@ -27,15 +28,15 @@ export const ballotService = {
     return response.data;
   },
 
-  getResults: async (electionId: string) => {
-    if (!electionId) return [];
-    const response = await API.get(`/results/${electionId}`);
+  getStats: async (electionId: string, dept: string = 'ALL') => {
+    const response = await API.get(`/stats/${electionId}`, {
+      params: { dept } 
+    });
     return response.data;
   },
 
-  getStats: async (electionId: string) => {
-    if (!electionId) return null;
-    const response = await API.get(`/stats/${electionId}`);
+  getResults: async (electionId: string) => {
+    const response = await API.get(`/results/${electionId}`);
     return response.data;
-  }
+  },
 };
