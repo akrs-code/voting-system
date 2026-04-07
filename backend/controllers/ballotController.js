@@ -19,15 +19,39 @@ export const getActiveElection = async (req, res) => {
 export const castBallot = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
+
     try {
         const { electionId, votes } = req.body;
         const userId = req.user.id;
 
         const user = await User.findById(userId).session(session);
-        if (!user) throw new Error("User does not exist");
+        if (!user) throw new Error("User does not exist.");
 
         if (user.votedElections.includes(electionId)) {
             throw new Error("You have already cast your vote in this election.");
+        }
+
+        for (const vote of votes) {
+            const [position, candidate] = await Promise.all([
+                Position.findById(vote.positionId).session(session),
+                Candidate.findById(vote.candidateId).session(session)
+            ]);
+
+            if (!position || !candidate) throw new Error("Invalid selection: Position or Candidate not found.");
+
+            const isPosDeptValid = position.department === "ALL" || position.department === user.department;
+            const isPosYearValid = position.yearLevel === null || position.yearLevel === user.yearLevel;
+
+            if (!isPosDeptValid || !isPosYearValid) {
+                throw new Error(`Restricted: You cannot vote for the position: ${position.name}`);
+            }
+
+            const isCandDeptValid = candidate.department === "ALL" || candidate.department === user.department;
+            const isCandYearValid = candidate.yearLevel === null || candidate.yearLevel === user.yearLevel;
+
+            if (!isCandDeptValid || !isCandYearValid) {
+                throw new Error(`Restricted: Candidate ${candidate.name} is not in your department/year level.`);
+            }
         }
 
         const voteCountsByPosition = votes.reduce((acc, vote) => {
@@ -37,9 +61,8 @@ export const castBallot = async (req, res) => {
 
         for (const [positionId, count] of Object.entries(voteCountsByPosition)) {
             const position = await Position.findById(positionId).session(session);
-            if (!position) throw new Error("Position not found");
             if (count > position.maxVote) {
-                throw new Error(`Exceeded max votes for ${position.name}.`);
+                throw new Error(`Exceeded max votes for ${position.name}. Allowed: ${position.maxVote}`);
             }
         }
 
@@ -58,10 +81,10 @@ export const castBallot = async (req, res) => {
             submitted: true
         }], { session });
 
-        const election = await Election.findById(electionId).session(session);
-
         await session.commitTransaction();
 
+        const election = await Election.findById(electionId);
+        
         const votedDetails = await Promise.all(
             votes.map(async (vote) => {
                 const [cand, pos] = await Promise.all([
@@ -77,7 +100,7 @@ export const castBallot = async (req, res) => {
 
         sendVoteEmail(
             user.email,
-            user.firstName || user.name || "Voter",
+            user.name || "Voter",
             election?.title || "MSU CICS Election",
             votedDetails
         ).catch(err => console.error("Email Receipt Error:", err));
@@ -92,6 +115,7 @@ export const castBallot = async (req, res) => {
             voted: votedDetails,
             ballotId: ballot._id
         });
+
     } catch (error) {
         await session.abortTransaction();
         res.status(400).json({ error: error.message });
@@ -158,31 +182,48 @@ export const getElectionResultsByPosition = async (req, res) => {
     }
 };
 
+// backend/controllers/ballotController.js
+
 export const getElectionStats = async (req, res) => {
     try {
         const { electionId } = req.params;
         const { dept } = req.query;
 
-        const userFilter = { role: 'voter', eligibleElections: electionId };
+        // 1. Define the base filter for all potential voters
+        const userFilter = { 
+            role: 'voter'
+        };
+        
         const candidateFilter = { election: electionId };
 
+        // 2. Apply department filter if not 'ALL'
         if (dept && dept !== 'ALL') {
             userFilter.department = dept;
             candidateFilter.department = dept;
         }
 
+        // 3. Get counts
+        // totalVoters = Everyone eligible to vote (Role: voter + Dept filter)
         const totalVoters = await User.countDocuments(userFilter);
+        
         const totalCandidates = await Candidate.countDocuments(candidateFilter);
+        
+        // 4. votedCount = Users from the same group who have the ID in their votedElections
         const votedCount = await User.countDocuments({
             ...userFilter,
-            votedElections: electionId
+            votedElections: electionId 
         });
+
+        // 5. Calculate percentage safely
+        const turnoutPercentage = totalVoters > 0 
+            ? ((votedCount / totalVoters) * 100).toFixed(2) 
+            : "0.00";
 
         res.json({
             totalVoters,
             votedCount,
             totalCandidates,
-            turnoutPercentage: totalVoters > 0 ? ((votedCount / totalVoters) * 100).toFixed(2) : "0.00"
+            turnoutPercentage
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -193,16 +234,32 @@ export const getBallot = async (req, res) => {
     try {
         const { electionId } = req.params;
         const eId = new mongoose.Types.ObjectId(electionId);
+        
+       
+        const userDept = req.user.department; 
+        const userYear = req.user.yearLevel; 
 
-        const positions = await Position.find({ election: eId });
+        const positions = await Position.find({ 
+            election: eId,
+            department: { $in: [userDept, "ALL"] },
+            $or: [
+                { yearLevel: userYear },
+                { yearLevel: null }
+            ]
+        });
 
         const ballotData = await Promise.all(
             positions.map(async (pos) => {
-
                 const candidates = await Candidate.find({
                     position: pos._id,
-                    election: eId
+                    election: eId,
+                    department: { $in: [userDept, "ALL"] },
+                    $or: [
+                        { yearLevel: userYear },
+                        { yearLevel: null }
+                    ]
                 }).select("name profilePicture partylist department yearLevel");
+
                 return {
                     positionId: pos._id,
                     positionName: pos.name,
@@ -219,7 +276,9 @@ export const getBallot = async (req, res) => {
             })
         );
 
-        res.json(ballotData);
+        const filteredBallot = ballotData.filter(p => p.candidates.length > 0);
+
+        res.json(filteredBallot);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
