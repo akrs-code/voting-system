@@ -119,8 +119,19 @@ export const updateUser = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({ role: "voter" }).select("-password").sort({ name: 1 });
-        res.json(users);
+        const users = await User.find({ role: "voter" })
+            .select("-password")
+            .sort({ name: 1 });
+
+        const usersWithStatus = users.map(user => {
+            const userObj = user.toObject();
+            return {
+                ...userObj,
+                hasVoted: userObj.votedElections.length > 0
+            };
+        });
+
+        res.json(usersWithStatus);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch users" });
     }
