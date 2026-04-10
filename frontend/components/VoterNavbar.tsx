@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 import { useActiveElection } from "../hooks/useActiveElection";
 import { useAuth } from "../hooks/useAuth";
 

@@ -10,8 +10,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-6 py-3 font-poppins">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-                
+            <div className="max-w-7xl mx-auto flex items-center justify-between">           
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onMenuClick}
@@ -23,7 +22,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     <img src="/cics.png" alt="Logo" className="w-10 h-10 object-contain" />
                     <div className="hidden sm:block">
                         <h1 className="text-sm font-bold tracking-tight text-[#2f318d] uppercase leading-none">
-                            MSU CICS ELECTION DAY
+                            MSU CICS BYTES ELECTION SYSTEM
                         </h1>
                         <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">
                             Official Electoral Dashboard
@@ -42,11 +41,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     {activeElection && (
                         <>
                             <div className="h-6 w-px bg-slate-200 mx-2" />
-                            <div className="flex flex-col max-w-[150px] md:max-w-[300px]">
+                            <div className="flex flex-col max-w-37.5 md:max-w-75">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
                                     Active Election
                                 </span>
-                                <span className="text-[11px] font-black text-[#2f318d] truncate mt-0.5">
+                                <span className="text-[11px] font-bold text-[#2f318d] truncate mt-0.5">
                                     {activeElection.title}
                                 </span>
                             </div>

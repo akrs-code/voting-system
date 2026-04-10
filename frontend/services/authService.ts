@@ -1,33 +1,24 @@
-import axios from "axios";
+import API from "./api.ts";
 import { AuthResponse, LoginCredentials, User } from "../types/interface";
-
-const API = axios.create({
-  baseURL: (import.meta as any).env.VITE_API_URL + "/auth",
-});
-
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await API.post<AuthResponse>("/login", credentials);
+    const response = await API.post<AuthResponse>("/auth/login", credentials);
     return response.data;
   },
-
-  signup: async (userData: Partial<User> & { password?: string }): Promise<void> => {
-    await API.post("/signup", userData);
+  submitApplication: async (userData: Partial<User>): Promise<void> => {
+    await API.post("/auth/apply", userData); 
   },
-
   bulkSignup: async (usersArray: Array<Partial<User> & { password?: string }>): Promise<any> => {
-    const response = await API.post("/bulk", usersArray);
+    const response = await API.post("/auth/bulk", usersArray);
     return response.data;
   },
+  getPendingApplications: async (): Promise<User[]> => {
+    const response = await API.get('/auth/applications/pending');
+    return response.data;
+  },
+  manageApplication: async (id: string, action: 'approved' | 'rejected') => {
+    const response = await API.post(`/auth/manage-user/${id}`, { status: action });
+    return response.data;
+  }
 };

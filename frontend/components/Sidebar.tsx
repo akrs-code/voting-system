@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Vote, UserPlus, X, LucideIcon, Trophy, LogOut } from 'lucide-react';
+import { BarChart3, Users, Vote, UserPlus, X, LucideIcon, Trophy, LogOut, UserCheck2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from "../hooks/useAuth";
 
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   const menuItems: MenuItem[] = [
     { label: 'Live Analytics', icon: BarChart3, href: '/dashboard/admin' },
+    { label: 'Applications', icon: UserCheck2, href: '/dashboard/admin/applications' },
     { label: 'Voters', icon: Users, href: '/dashboard/admin/voters' },
     { label: 'Elections', icon: Vote, href: '/dashboard/admin/elections' },
     { label: 'Positions', icon: Trophy, href: '/dashboard/admin/positions' },

@@ -1,40 +1,24 @@
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: (import.meta as any).env.VITE_API_URL + "/auth",
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import API from "./api.ts";
 
 export const voterService = {
   getAll: async () => {
-    const response = await api.get('/voters'); 
+    const response = await API.get('/auth/voters');
     return response.data;
   },
-
   create: async (voterData: any) => {
-    const response = await api.post('/signup', voterData);
+    const response = await API.post('/auth/signup', voterData);
     return response.data;
   },
-
   bulkCreate: async (voters: any[]) => {
-    const response = await api.post('/bulk', voters);
+    const response = await API.post('/auth/bulk', voters);
     return response.data;
   },
-
   update: async (id: string, updateData: any) => {
-    const response = await api.put(`/voter/${id}`, updateData);
+    const response = await API.put(`/auth/voter/${id}`, updateData);
     return response.data;
   },
-
   delete: async (id: string) => {
-    const response = await api.delete(`/voter/${id}`);
+    const response = await API.delete(`/auth/voter/${id}`);
     return response.data;
   }
 };

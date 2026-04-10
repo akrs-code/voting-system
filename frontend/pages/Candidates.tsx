@@ -1,8 +1,17 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
-  Plus, Loader2, Trash2, X, Edit3,
-  CheckCircle2, AlertCircle, Search,
-  Building2, Briefcase, Camera
+  Plus,
+  Loader2,
+  Trash2,
+  X,
+  Edit3,
+  CheckCircle2,
+  AlertCircle,
+  Search,
+  Building2,
+  Briefcase,
+  Camera,
+  ChevronDown,
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from 'formik';
 import * as Yup from 'yup';
@@ -10,17 +19,7 @@ import { candidateService } from '../services/candidateService';
 import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
 import Pagination from '../components/Pagination';
-
-interface Candidate {
-  _id: string;
-  name: string;
-  partylist: string;
-  department: "DIS" | "DCS" | "ALL";
-  yearLevel: number | null;
-  position: { _id: string; name: string };
-  election: { _id: string; title: string };
-  profilePicture?: string;
-}
+import { Candidate } from 'types/interface';
 
 const FormWatcher = ({ onElectionChange }: { onElectionChange: (id: string) => void }) => {
   const { values } = useFormikContext<{ electionId: string }>();
@@ -33,14 +32,15 @@ const FormWatcher = ({ onElectionChange }: { onElectionChange: (id: string) => v
 const Candidates = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [elections, setElections] = useState<any[]>([]);
-  const [positions, setPositions] = useState<any[]>([]);
   const [modalPositions, setModalPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [selectedElectionId, setSelectedElectionId] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCand, setSelectedCand] = useState<Candidate | null>(null);
@@ -49,34 +49,31 @@ const Candidates = () => {
   const itemsPerPage = 8;
 
   const validationSchema = Yup.object({
-    name: Yup.string().min(3, "Too short").required("Required"),
-    partylist: Yup.string().required("Required"),
-    department: Yup.string().required("Required"),
-    position: Yup.string().required("Required"),
-    electionId: Yup.string().required("Required"),
-    yearLevel: Yup.number().nullable().typeError("Must be a number"),
+    name: Yup.string().min(3, "Name too short").required("Full name is required"),
+    partylist: Yup.string().required("Partylist is required"),
+    department: Yup.string().required("Department is required"),
+    position: Yup.string().required("Position is required"),
+    electionId: Yup.string().required("Election cycle is required"),
+    yearLevel: Yup.number().nullable().transform((v) => (v === "" || isNaN(v) ? null : v)),
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const dept = selectedDepartment || "ALL";
-      const [candData, elData, posData] = await Promise.all([
-        candidateService.getAll(dept, selectedElectionId),
-        electionService.getAll(),
-        positionService.getPositions("ALL", selectedElectionId)
+      const [candData, elData] = await Promise.all([
+        candidateService.getAll(selectedDepartment, selectedElectionId),
+        electionService.getAll()
       ]);
       setCandidates(candData);
       setElections(elData);
-      setPositions(posData);
     } catch (error) {
-      console.error(error);
+      console.error("Fetch Error:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDepartment, selectedElectionId]);
 
-  const handleElectionChangeInModal = async (electionId: string) => {
+  const handleElectionChangeInModal = useCallback(async (electionId: string) => {
     if (!electionId) {
       setModalPositions([]);
       return;
@@ -85,71 +82,85 @@ const Candidates = () => {
       const data = await positionService.getPositions("ALL", electionId);
       setModalPositions(data);
     } catch (error) {
-      console.error(error);
+      console.error("Position Fetch Error:", error);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedElectionId, selectedDepartment, showModal]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredCandidates = useMemo(() => {
-    setCurrentPage(1);
-    return candidates.filter(c => {
-      const matchesSearch =
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.partylist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.position?.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-      return matchesSearch;
-    });
+    return candidates.filter(c =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.partylist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.position?.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [candidates, searchTerm]);
 
+  const currentCandidates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCandidates.slice(start, start + itemsPerPage);
+  }, [filteredCandidates, currentPage]);
+
   const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
-  const currentCandidates = filteredCandidates.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const handleOpenModal = (cand?: Candidate) => {
     setIsEditing(!!cand);
     setSelectedCand(cand || null);
+    setPreviewUrl(cand?.profilePicture || null);
     setShowModal(true);
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedCand(null);
+    setPreviewUrl(null);
+    setModalPositions([]);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Remove this candidate?")) return;
+    if (!window.confirm("Permanent Action: Remove this candidate from the registry?")) return;
     try {
       await candidateService.delete(id);
       fetchData();
     } catch {
-      alert("Delete failed");
+      alert("Error: Could not remove candidate.");
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-10 font-poppins">
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 px-2">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 md:space-y-10 font-poppins">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6">
         <div>
-          <h2 className="text-[0.75rem] font-bold tracking-[0.07rem] text-[#2f318d] uppercase opacity-80 mb-1">MSU CICS Administration</h2>
+          <h2 className="text-[0.7rem] md:text-[0.75rem] font-bold tracking-[0.07rem] text-[#2f318d] uppercase opacity-80 mb-1">
+            MSU CICS Administration
+          </h2>
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Candidate Registry</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage student representatives and their respective partylists.</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">Found {filteredCandidates.length} registered candidates in the system.</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="h-12 bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
+          className="h-12 w-full md:w-auto bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
         >
-          <Plus size={18} /> Add Candidate
+          <Plus size={18} />
+          <span>Add Candidate</span>
         </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
-        <div className="relative group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative group sm:col-span-2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Search candidates..."
-            className="w-full h-12 pl-12 pr-4 border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all bg-white shadow-sm font-medium text-sm"
+            placeholder="Search by name, partylist, or position..."
+            className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -158,30 +169,32 @@ const Candidates = () => {
         <div className="relative">
           <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
           <select
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+            className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
             value={selectedElectionId}
             onChange={(e) => setSelectedElectionId(e.target.value)}
           >
             <option value="">All Election Cycles</option>
             {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
           </select>
+          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
         </div>
 
         <div className="relative">
           <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
           <select
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+            className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
           >
-            <option value="">All Departments</option>
-            <option value="ALL">General (ALL)</option>
-            <option value="DIS">DIS</option>
-            <option value="DCS">DCS</option>
+            <option value="ALL">All Departments</option>
+            <option value="DIS">DIS Department</option>
+            <option value="DCS">DCS Department</option>
           </select>
+          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
         </div>
       </div>
 
+      {/* DATA TABLE SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24">
@@ -189,53 +202,58 @@ const Candidates = () => {
             <p className="text-[#2f318d] text-[0.7rem] font-bold uppercase tracking-widest opacity-60">Synchronizing Registry</p>
           </div>
         ) : filteredCandidates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="flex flex-col items-center justify-center py-24 text-center px-4">
             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">No candidates match your current filters.</p>
+            <p className="text-slate-400 font-medium">No candidates match your current search or filters.</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="w-full text-left border-collapse min-w-200">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
-                    <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Candidate Details</th>
-                    <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Partylist</th>
-                    <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Eligibility Scope</th>
-                    <th className="px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
+                    <th className="px-6 md:px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Candidate Identity</th>
+                    <th className="px-6 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Partylist</th>
+                    <th className="px-6 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Academic Scope</th>
+                    <th className="px-6 md:px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {currentCandidates.map((c) => (
-                    <tr key={c._id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-10 py-4">
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src={c.profilePicture || "https://ui-avatars.com/api/?name=" + c.name} 
-                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-100" 
+                    <tr key={c._id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 md:px-10 py-5">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={c.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f1f5f9&color=2f318d`}
+                            className="w-11 h-11 rounded-2xl object-cover border-2 border-slate-50 shadow-sm transition-transform group-hover:scale-105"
                             alt={c.name}
                           />
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-800 text-[0.95rem]">{c.name}</span>
-                            <span className="text-slate-400 text-[0.75rem] font-medium italic">{c.position?.name}</span>
+                            <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{c.name}</span>
+                            <span className="text-[11px] text-slate-400 font-medium">{c.position?.name}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-center">
-                        <span className="font-semibold text-slate-700 text-sm">{c.partylist}</span>
+                      <td className="px-6 py-5 text-center">
+                        <span className="text-[10px] bg-slate-100 px-3 py-1.5 rounded-lg text-slate-500 font-bold uppercase tracking-wide">
+                          {c.partylist}
+                        </span>
                       </td>
-                      <td className="px-10 py-6 text-center">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 text-slate-600 border border-slate-100 rounded-full text-[10px] font-bold">
-                          {c.department} {c.yearLevel && <span className="opacity-50 ml-1">Year {c.yearLevel}</span>}
+                      <td className="px-6 py-5 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="px-3 py-1 bg-indigo-50 text-[#2f318d] border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                            {c.department}
+                          </span>
+                          {c.yearLevel && <span className="text-[10px] text-slate-400 font-bold">Year {c.yearLevel}</span>}
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-right">
-                        <div className="flex justify-end items-center gap-3">
-                          <button onClick={() => handleOpenModal(c)} className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm">
-                            <Edit3 size={16} />
+                      <td className="px-6 md:px-10 py-5 text-right">
+                        <div className="flex justify-end gap-2 md:gap-3">
+                          <button onClick={() => handleOpenModal(c)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all">
+                            <Edit3 size={15} />
                           </button>
-                          <button onClick={() => handleDelete(c._id)} className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm">
-                            <Trash2 size={16} />
+                          <button onClick={() => handleDelete(c._id)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
@@ -244,24 +262,26 @@ const Candidates = () => {
                 </tbody>
               </table>
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
+            <div className="p-4 border-t border-slate-50">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </div>
           </>
         )}
       </div>
 
       {showModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl p-10 relative animate-in zoom-in-95 duration-200 max-h-[95vh] overflow-y-auto border border-white/20">
-            <button onClick={() => setShowModal(false)} className="absolute right-8 top-8 text-slate-400 hover:text-slate-600 transition-colors">
+          <div className="w-full max-w-2xl bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
+            <button onClick={closeModal} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600 transition-colors">
               <X size={20} />
             </button>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-800">{isEditing ? 'Edit Profile' : 'New Candidate'}</h2>
-              <p className="text-sm text-slate-500 mt-1">Configure candidate background and electoral scope.</p>
+            <div className="mb-6 md:mb-10 text-center sm:text-left">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800">{isEditing ? 'Update Profile' : 'Register Candidate'}</h2>
+              <p className="text-xs md:text-sm text-slate-500 mt-1">Configure candidate credentials and departmental scope.</p>
             </div>
 
             <Formik
@@ -278,22 +298,25 @@ const Candidates = () => {
               onSubmit={async (values, { setSubmitting, resetForm }) => {
                 try {
                   const formData = new FormData();
-                  Object.keys(values).forEach(key => {
-                    formData.append(key, (values as any)[key]);
+                  Object.entries(values).forEach(([key, value]) => {
+                    if (value !== null && value !== '') formData.append(key, String(value));
                   });
-                  
+
                   if (fileInputRef.current?.files?.[0]) {
                     formData.append('image', fileInputRef.current.files[0]);
                   }
 
-                  if (isEditing && selectedCand) await candidateService.update(selectedCand._id, formData);
-                  else await candidateService.create(formData);
-                  
-                  setShowModal(false);
+                  if (isEditing && selectedCand) {
+                    await candidateService.update(selectedCand._id, formData);
+                  } else {
+                    await candidateService.create(formData);
+                  }
+
+                  closeModal();
                   resetForm();
                   fetchData();
                 } catch (err: any) {
-                  alert(err.response?.data?.error || "Transaction failed");
+                  alert(err.response?.data?.error || "Transaction encountered an error.");
                 } finally {
                   setSubmitting(false);
                 }
@@ -302,69 +325,87 @@ const Candidates = () => {
               {({ isSubmitting, errors, touched, values }) => (
                 <Form className="space-y-6">
                   <FormWatcher onElectionChange={handleElectionChangeInModal} />
+                  
+                  <div className="flex justify-center mb-6">
+                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                      <div className="w-32 h-32 md:w-36 md:h-36 rounded-4xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#2f318d] group-hover:bg-indigo-50/30">
+                        {previewUrl ? (
+                          <img src={previewUrl} className="w-full h-full object-cover" alt="preview" />
+                        ) : (
+                          <>
+                            <Camera className="text-slate-300 group-hover:text-[#2f318d] mb-2" size={32} />
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-[#2f318d]">Photo</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 p-2 bg-white rounded-xl shadow-lg border border-slate-100 text-[#2f318d]">
+                        <Plus size={16} />
+                      </div>
+                      <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileChange} />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                    <div className="md:col-span-2 flex justify-center mb-4">
-                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                           <div className="w-40 h-40 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#2f318d] group-hover:bg-indigo-50">
-                                {selectedCand?.profilePicture ? (
-                                    <img src={selectedCand.profilePicture} className="w-full h-full object-cover" alt="preview" />
-                                ) : (
-                                    <>
-                                        <Camera className="text-slate-400 group-hover:text-[#2f318d] mb-1" size={28} />
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-[#2f318d]">Upload Photo</span>
-                                    </>
-                                )}
-                           </div>
-                           <input type="file" ref={fileInputRef} hidden accept="image/*" />
-                        </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Full Identity</label>
+                      <Field name="name" placeholder="John B. Doe" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
+                      <ErrorMessage name="name" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Full Name</label>
-                      <Field name="name" placeholder="e.g. Juan Dela Cruz" className={`h-14 w-full border px-5 rounded-2xl outline-none transition-all ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
-                      <ErrorMessage name="name" component="div" className="text-xs text-red-500 font-bold ml-2" />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Partylist / Alliance</label>
+                      <Field name="partylist" placeholder="Independent" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.partylist && touched.partylist ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
+                      <ErrorMessage name="partylist" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Partylist</label>
-                      <Field name="partylist" placeholder="e.g. Progressive Alliance" className={`h-14 w-full border px-5 rounded-2xl outline-none transition-all ${errors.partylist && touched.partylist ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
-                      <ErrorMessage name="partylist" component="div" className="text-xs text-red-500 font-bold ml-2" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Election Cycle</label>
-                      <Field as="select" name="electionId" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
-                        <option value="">Select Election Cycle...</option>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Election Cycle</label>
+                      <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="">Choose Election Cycle...</option>
                         {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
                       </Field>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Target Position</label>
-                      <Field as="select" name="position" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
-                        <option value="">{values.electionId ? "Select Position..." : "Pick an Election first"}</option>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Target Position</label>
+                      <Field as="select" name="position" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="">{values.electionId ? "Select Official Position..." : "Awaiting Election selection..."}</option>
                         {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
                       </Field>
+                      <ErrorMessage name="position" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Department Scope</label>
-                      <Field as="select" name="department" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
-                        <option value="ALL">ALL (College-wide)</option>
-                        <option value="DIS">DIS (Information Tech&Systems)</option>
-                        <option value="DCS">DCS (Computer Science)</option>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Department Scope</label>
+                      <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="ALL">ALL (College-Wide)</option>
+                        <option value="DIS">DIS Department</option>
+                        <option value="DCS">DCS Department</option>
                       </Field>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 ml-1">Year Level (only for representative)</label>
-                       <Field as="select"
-                        name="yearLevel" className="h-14 w-full border border-slate-200 px-5 rounded-2xl outline-none focus:border-[#2f318d] bg-slate-50/50 font-bold text-[#2f318d] appearance-none cursor-pointer">
-                        <option value="null"></option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Year Level (Optional)</label>
+                      <Field as="select" name="yearLevel" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="">Not Applicable</option>
+                        {[1, 2, 3, 4].map(y => <option key={y} value={y}>{y}{y === 1 ? 'st' : y === 2 ? 'nd' : y === 3 ? 'rd' : 'th'} Year</option>)}
                       </Field>
                     </div>
                   </div>
-                  <button type="submit" disabled={isSubmitting} className="h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-4 shadow-lg shadow-indigo-100">
-                    {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <><CheckCircle2 size={20} /> <span>{isEditing ? 'Save Profile' : 'Register Candidate'}</span></>}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="h-12 md:h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-6 shadow-xl shadow-indigo-100/50"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 size={20} />
+                        <span>{isEditing ? 'Save Profile' : 'Complete Registration'}</span>
+                      </>
+                    )}
                   </button>
                 </Form>
               )}

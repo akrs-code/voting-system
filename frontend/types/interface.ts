@@ -10,6 +10,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   votedElections: string[];
+  isVerified: 'pending' | 'approved'
 }
 
 export interface AuthResponse {
@@ -47,4 +48,15 @@ export interface Election {
   startDate: string;
   endDate: string;
   isActive: boolean;
+}
+
+export interface Candidate {
+  _id: string;
+  name: string;
+  partylist: string;
+  department: "DIS" | "DCS" | "ALL";
+  yearLevel: number | null;
+  position: { _id: string; name: string };
+  election: { _id: string; title: string };
+  profilePicture?: string;
 }
