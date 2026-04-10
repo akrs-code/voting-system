@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Loader2, Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { authService } from "../services/authService";
 import { User } from "../types/interface";
 
 export default function SignupApplication() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -60,7 +59,6 @@ export default function SignupApplication() {
         onSubmit={async (values, { setSubmitting, setStatus }) => {
           setStatus(null);
           try {
-          
             await authService.submitApplication(values as Partial<User>);
             setIsSuccess(true);
           } catch (err: any) {
