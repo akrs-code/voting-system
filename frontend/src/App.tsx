@@ -8,9 +8,11 @@ import Login from "../pages/Login";
 import Voters from "../pages/Voters";
 import Elections from "../pages/Elections";
 import Candidates from "../pages/Candidates";
-import VoterDashboard from "../pages/VoterDashboard"
+import VoterDashboard from "../pages/VoterDashboard";
 import Dashboard from "../pages/Dashboard";
 import Positions from "../pages/Position";
+import Applications from "../pages/Applications";
+import SignupApplication from "../pages/SignupApplication";
 
 function App() {
   const { user, loading } = useAuth();
@@ -20,6 +22,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
+        
         <Route
           path="/login"
           element={
@@ -30,7 +33,11 @@ function App() {
             )
           }
         />
+        
+        <Route path="/applications/dis" element={<SignupApplication />} />
+        <Route path="/applications/dcs" element={<SignupApplication />} />
 
+      
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route element={<AdminLayout />}>
             <Route path="/dashboard/admin" element={<Dashboard />} />
@@ -38,6 +45,7 @@ function App() {
             <Route path="/dashboard/admin/voters" element={<Voters />} />
             <Route path="/dashboard/admin/positions" element={<Positions />} />
             <Route path="/dashboard/admin/candidates" element={<Candidates />} />
+            <Route path="/dashboard/admin/applications" element={<Applications />} />
           </Route>
         </Route>
 

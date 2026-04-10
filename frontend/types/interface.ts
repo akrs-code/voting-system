@@ -10,6 +10,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   votedElections: string[];
+  isVerified: 'pending' | 'approved'
 }
 
 export interface AuthResponse {
