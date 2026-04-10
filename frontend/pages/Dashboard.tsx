@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Users, UserCheck, UserPlus, PieChart, Trophy, RefreshCcw, DownloadIcon } from 'lucide-react';
 import { ballotService } from '../services/ballotService';
 import { useActiveElection } from '../hooks/useActiveElection';
-import { socket } from '../src/socket';
+import { socket } from '../services/socket';
 import { generateExcelReport } from '../utils/exportReports';
 
 const Dashboard = () => {
@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDept, setSelectedDept] = useState('ALL');
+  const lastFetchTime = useRef<number>(0);
 
   const [stats, setStats] = useState({
     totalVoters: 0,
@@ -20,6 +21,11 @@ const Dashboard = () => {
 
   const fetchData = useCallback(async (dept: string) => {
     if (!activeElection?._id) return;
+    
+    const now = Date.now();
+    if (now - lastFetchTime.current < 1000) return; 
+    lastFetchTime.current = now;
+
     try {
       setLoading(true);
       const [resData, statsData] = await Promise.all([
@@ -42,20 +48,22 @@ const Dashboard = () => {
   }, [activeElection?._id]);
 
   useEffect(() => {
-    if (activeElection?._id) {
-      fetchData(selectedDept);
+    if (!activeElection?._id) return;
 
-      if (!socket.connected) socket.connect();
+    fetchData(selectedDept);
 
-      const handleNewVote = (data: any) => {
-        if (data.electionId === activeElection._id) {
-          fetchData(selectedDept);
-        }
-      };
+    if (!socket.connected) socket.connect();
 
-      socket.on('newVoteCast', handleNewVote);
-      return () => { socket.off('newVoteCast', handleNewVote); };
-    }
+    const handleNewVote = (data: any) => {
+      if (data.electionId === activeElection._id) {
+        fetchData(selectedDept);
+      }
+    };
+
+    socket.on('newVoteCast', handleNewVote);
+    return () => {
+      socket.off('newVoteCast', handleNewVote);
+    };
   }, [activeElection?._id, selectedDept, fetchData]);
 
   const filteredResults = useMemo(() => {
@@ -116,7 +124,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
         {filteredResults.map((pos) => (
-          <div key={pos.positionId} className="bg-white rounded-4xl md:rounded-4xl border border-slate-200 shadow-lg overflow-hidden flex flex-col hover:border-[#2f318d]/30 transition-colors">
+          <div key={pos.positionId} className="bg-white rounded-4xl border border-slate-200 shadow-lg overflow-hidden flex flex-col hover:border-[#2f318d]/30 transition-colors">
             <div className="p-5 md:p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
               <div>
                 <h3 className="text-base md:text-lg font-bold text-slate-800 leading-tight">{pos.positionName}</h3>
@@ -163,11 +171,9 @@ const Dashboard = () => {
 
 const StatCard = ({ title, value, icon, color }: any) => (
   <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-4xl border border-slate-200 shadow-sm flex flex-row items-center gap-3 md:gap-4">
-    
     <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl shrink-0 flex items-center justify-center ${color}`}>
       {icon}
     </div>
-
     <div className="flex flex-col min-w-0">
       <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1 truncate">
         {title}
@@ -176,7 +182,6 @@ const StatCard = ({ title, value, icon, color }: any) => (
         {value}
       </p>
     </div>
-
   </div>
 );
 
