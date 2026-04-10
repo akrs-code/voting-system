@@ -235,7 +235,7 @@ const Candidates = () => {
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">
-                        <span className="text-[11px] bg-slate-100 px-3 py-1.5 rounded-lg text-slate-500 font-bold uppercase tracking-wide">
+                        <span className="text-[10px] bg-slate-100 px-3 py-1.5 rounded-lg text-slate-500 font-bold uppercase tracking-wide">
                           {c.partylist}
                         </span>
                       </td>
