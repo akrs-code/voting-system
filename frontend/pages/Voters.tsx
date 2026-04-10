@@ -9,12 +9,14 @@ import {
   CheckCircle2,
   AlertCircle,
   SlidersHorizontal,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { voterService } from '../services/voterService';
 import Pagination from '../components/Pagination';
 import { Voter } from 'types/interface';
+import { VoterReports } from "../utils/voterReports"
 
 const Voters = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -38,8 +40,9 @@ const Voters = () => {
       .matches(/^202\d{6}$/, "Institutional ID must start with 202 and be 9 digits")
       .required("Institutional ID is required"),
     email: Yup.string()
-      .email("Invalid email format")
-      .required("Email is required"),
+      .email("Invalid email")
+      .matches(/@s.msumain.edu.ph$/, "Must be an @s.msumain.edu.ph email")
+      .required("Institutional email is required"),
     department: Yup.string()
       .oneOf(['DIS', 'DCS'], "Select a valid department")
       .required("Department is required"),
@@ -129,13 +132,22 @@ const Voters = () => {
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Voter Records</h1>
           <p className="text-slate-500 text-xs md:text-sm mt-1">Manage institutional records and monitor real-time voting status.</p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="h-12 w-full md:w-auto bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
-        >
-          <UserPlus size={18} />
-          <span>Add New Student</span>
-        </button>
+        <div className='flex gap-3'>
+          <button
+            onClick={() => VoterReports(voters, "CICS General Elections 2026")}
+            className="h-12 w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
+          >
+            <FileSpreadsheet size={18} />
+            <span>Export Excel</span>
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            className="h-12 w-full md:w-auto bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
+          >
+            <UserPlus size={18} />
+            <span>Add New Student</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
