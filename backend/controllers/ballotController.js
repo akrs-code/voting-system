@@ -27,30 +27,32 @@ export const castBallot = async (req, res) => {
         const user = await User.findById(userId).session(session);
         if (!user) throw new Error("User does not exist.");
 
+        const election = await Election.findById(electionId).session(session);
+        if (!election || !election.isActive) throw new Error("This election is not active.");
+
         if (user.votedElections.includes(electionId)) {
             throw new Error("You have already cast your vote in this election.");
         }
 
+        const positionIds = votes.map(v => v.positionId);
+        const candidateIds = votes.map(v => v.candidateId);
+
+        const [dbPositions, dbCandidates] = await Promise.all([
+            Position.find({ _id: { $in: positionIds } }).session(session),
+            Candidate.find({ _id: { $in: candidateIds } }).session(session)
+        ]);
+
         for (const vote of votes) {
-            const [position, candidate] = await Promise.all([
-                Position.findById(vote.positionId).session(session),
-                Candidate.findById(vote.candidateId).session(session)
-            ]);
+            const position = dbPositions.find(p => p._id.toString() === vote.positionId);
+            const candidate = dbCandidates.find(c => c._id.toString() === vote.candidateId);
 
-            if (!position || !candidate) throw new Error("Invalid selection: Position or Candidate not found.");
+            if (!position || !candidate) throw new Error("Invalid selection: Item not found.");
 
-            const isPosDeptValid = position.department === "ALL" || position.department === user.department;
-            const isPosYearValid = position.yearLevel === null || position.yearLevel === user.yearLevel;
+            const isDeptValid = position.department === "ALL" || position.department === user.department;
+            const isYearValid = !position.yearLevel || position.yearLevel === user.yearLevel;
 
-            if (!isPosDeptValid || !isPosYearValid) {
-                throw new Error(`Restricted: You cannot vote for the position: ${position.name}`);
-            }
-
-            const isCandDeptValid = candidate.department === "ALL" || candidate.department === user.department;
-            const isCandYearValid = candidate.yearLevel === null || candidate.yearLevel === user.yearLevel;
-
-            if (!isCandDeptValid || !isCandYearValid) {
-                throw new Error(`Restricted: Candidate ${candidate.name} is not in your department/year level.`);
+            if (!isDeptValid || isYearValid === false) {
+                throw new Error(`Restricted: You cannot vote for ${position.name}`);
             }
         }
 
@@ -59,62 +61,34 @@ export const castBallot = async (req, res) => {
             return acc;
         }, {});
 
-        for (const [positionId, count] of Object.entries(voteCountsByPosition)) {
-            const position = await Position.findById(positionId).session(session);
-            if (count > position.maxVote) {
-                throw new Error(`Exceeded max votes for ${position.name}. Allowed: ${position.maxVote}`);
-            }
+        for (const [posId, count] of Object.entries(voteCountsByPosition)) {
+            const pos = dbPositions.find(p => p._id.toString() === posId);
+            if (count > pos.maxVote) throw new Error(`Too many votes for ${pos.name}.`);
         }
 
         user.votedElections.push(electionId);
         await user.save({ session });
 
-        const ballotVotes = votes.map(v => ({
-            position: new mongoose.Types.ObjectId(v.positionId),
-            candidate: new mongoose.Types.ObjectId(v.candidateId)
-        }));
-
-        const [ballot] = await Ballot.create([{
-            voter: userId,
-            election: new mongoose.Types.ObjectId(electionId),
-            votes: ballotVotes,
+        const ballot = await Ballot.create([{
+            election: electionId,
+            votes: votes.map(v => ({ position: v.positionId, candidate: v.candidateId })),
             submitted: true
         }], { session });
 
         await session.commitTransaction();
 
-        const election = await Election.findById(electionId);
-        
-        const votedDetails = await Promise.all(
-            votes.map(async (vote) => {
-                const [cand, pos] = await Promise.all([
-                    Candidate.findById(vote.candidateId).select("name"),
-                    Position.findById(vote.positionId).select("name")
-                ]);
-                return {
-                    positionName: pos?.name || "Unknown",
-                    candidateName: cand?.name || "Unknown"
-                };
-            })
-        );
-
-        sendVoteEmail(
-            user.email,
-            user.name || "Voter",
-            election?.title || "MSU CICS Election",
-            votedDetails
-        ).catch(err => console.error("Email Receipt Error:", err));
-
-        req.app.get('io')?.emit('newVoteCast', {
-            electionId,
-            votes: votes.map(v => ({ positionId: v.positionId, candidateId: v.candidateId }))
+        const votedDetails = votes.map(v => {
+            const p = dbPositions.find(pos => pos._id.toString() === v.positionId);
+            const c = dbCandidates.find(cand => cand._id.toString() === v.candidateId);
+            return { positionName: p.name, candidateName: c.name };
         });
 
-        res.status(201).json({
-            message: "Ballot cast successfully",
-            voted: votedDetails,
-            ballotId: ballot._id
-        });
+        sendVoteEmail(user.email, user.name, election.title, votedDetails)
+            .catch(err => console.error("Email Error:", err));
+
+        req.app.get('io')?.emit('newVoteCast', { electionId, votes });
+
+        res.status(201).json({ message: "Ballot cast successfully", ballotId: ballot[0]._id });
 
     } catch (error) {
         await session.abortTransaction();
@@ -182,39 +156,32 @@ export const getElectionResultsByPosition = async (req, res) => {
     }
 };
 
-// backend/controllers/ballotController.js
 
 export const getElectionStats = async (req, res) => {
     try {
         const { electionId } = req.params;
         const { dept } = req.query;
 
-        // 1. Define the base filter for all potential voters
         const userFilter = { 
             role: 'voter'
         };
         
         const candidateFilter = { election: electionId };
 
-        // 2. Apply department filter if not 'ALL'
         if (dept && dept !== 'ALL') {
             userFilter.department = dept;
             candidateFilter.department = dept;
         }
 
-        // 3. Get counts
-        // totalVoters = Everyone eligible to vote (Role: voter + Dept filter)
         const totalVoters = await User.countDocuments(userFilter);
         
         const totalCandidates = await Candidate.countDocuments(candidateFilter);
-        
-        // 4. votedCount = Users from the same group who have the ID in their votedElections
+  
         const votedCount = await User.countDocuments({
             ...userFilter,
             votedElections: electionId 
         });
 
-        // 5. Calculate percentage safely
         const turnoutPercentage = totalVoters > 0 
             ? ((votedCount / totalVoters) * 100).toFixed(2) 
             : "0.00";

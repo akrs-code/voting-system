@@ -47,7 +47,13 @@ const userSchema = new mongoose.Schema({
     votedElections: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Election"
-    }]
+    }],
+
+    isVerified: {
+        type: String,
+        enum: ["in_progress","pending", "approved"],
+        default: "in_progress",
+    }
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

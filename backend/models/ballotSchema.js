@@ -17,7 +17,6 @@ const ballotSchema = new mongoose.Schema({
     voter: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
     },
     election: {
         type: mongoose.Schema.Types.ObjectId,

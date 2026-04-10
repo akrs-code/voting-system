@@ -1,6 +1,7 @@
 import User from "../models/userSchema.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { sendStatusEmail } from "../utils/emailHelper.js";
 
 export const login = async (req, res) => {
     try {
@@ -15,6 +16,12 @@ export const login = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        if (user.role === "voter" && user.isVerified === "pending") {
+            return res.status(403).json({ 
+                error: "Your account is still pending admin approval. Please wait or visit the BYTES office." 
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -49,7 +56,7 @@ export const login = async (req, res) => {
 
 export const signup = async (req, res) => {
     try {
-        const { name, studentId, password, department, yearLevel, role, email } = req.body;
+        const { name, studentId, password, department, yearLevel, email, role } = req.body;
 
         if (!name || !studentId || !password || !department || !yearLevel || !email) {
             return res.status(400).json({ error: "All required fields must be filled" });
@@ -68,10 +75,11 @@ export const signup = async (req, res) => {
             name: name.trim(),
             studentId: normalizedId,
             password: hashedPassword,
-            department,
+            department: department.toUpperCase(),
             yearLevel,
             email,
             role: role || "voter",
+            isVerified: "approved" 
         });
 
         res.status(201).json({
@@ -92,7 +100,7 @@ export const updateUser = async (req, res) => {
         if (!user) return res.status(404).json({ error: "User not found" });
 
         if (studentId) {
-            const normalizedId = studentId.trim().toLowerCase();
+            const normalizedId = studentId.trim()
             if (normalizedId !== user.studentId) {
                 const existingUser = await User.findOne({ studentId: normalizedId });
                 if (existingUser) return res.status(400).json({ error: "New Student ID already in use" });
@@ -205,5 +213,97 @@ export const bulkSignup = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: "Bulk signup failed", details: error.message });
+    }
+};
+
+
+export const submitApplication = async (req, res) => {
+    try {
+        const { name, studentId, password, yearLevel, email, department } = req.body;
+
+        if (!name || !studentId || !password || !yearLevel || !email || !department) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        const normalizedId = studentId.trim();
+        const existingUser = await User.findOne({ studentId: normalizedId });
+
+        if (existingUser) {
+            return res.status(400).json({ error: "Application or account already exists with this ID" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await User.create({
+            name: name.trim(),
+            studentId: normalizedId,
+            password: hashedPassword,
+            department: department.toUpperCase(),
+            yearLevel,
+            email,
+            role: "voter",
+            isVerified: "pending"
+        });
+
+        res.status(201).json({ message: "Application submitted successfully. Please wait for admin approval." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+export const manageApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; 
+        
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "Application not found" });
+        }
+
+        if (status === "approved") {
+            user.isVerified = "approved";
+            await user.save();
+
+            try {
+                await sendStatusEmail(user.email, user.name, "approved");
+            } catch (emailErr) {
+                console.error("Email error:", emailErr);
+            }
+            
+            return res.json({ message: "User approved and notified." });
+        } 
+        
+        if (status === "rejected") {
+            const { email, name } = user;
+
+            await User.findByIdAndDelete(id);
+
+            try {
+                await sendStatusEmail(email, name, "rejected");
+            } catch (emailErr) {
+                console.error("Email error:", emailErr);
+            }
+            
+            return res.json({ message: "Application rejected and user notified." });
+        }
+
+        res.status(400).json({ error: "Invalid status" });
+    } catch (error) {
+        res.status(500).json({ error: "Management action failed" });
+    }
+};
+
+export const getPendingApplications = async (req, res) => {
+    try {
+        const applications = await User.find({ 
+            role: "voter", 
+            isVerified: "pending" 
+        }).sort({ createdAt: -1 });
+
+        res.json(applications);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch pending applications" });
     }
 };
