@@ -15,15 +15,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
-
-interface Position {
-  _id: string;
-  name: string;
-  maxVote: number;
-  department: "DIS" | "DCS" | "ALL";
-  yearLevel: number | null;
-  election: any;
-}
+import { Position } from 'types/interface';
 
 const Positions = () => {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -237,7 +229,7 @@ const Positions = () => {
               initialValues={{
                 name: selectedPos?.name || '',
                 maxVote: selectedPos?.maxVote || 1,
-                department: selectedPos?.department || 'ALL',
+                department: selectedPos?.department || 'DIS',
                 yearLevel: selectedPos?.yearLevel || '',
                 electionId: selectedPos?.election?._id || selectedPos?.election || selectedElectionId || '',
               }}
@@ -247,7 +239,7 @@ const Positions = () => {
                   const payload = {
                     ...values,
                     yearLevel: values.yearLevel === "" ? null : Number(values.yearLevel),
-                    election: values.electionId 
+                    election: values.electionId
                   };
 
                   if (isEditing && selectedPos) {
@@ -255,7 +247,7 @@ const Positions = () => {
                   } else {
                     await positionService.create(payload);
                   }
-                  
+
                   setShowModal(false);
                   fetchData();
                 } catch (err) {
@@ -286,9 +278,8 @@ const Positions = () => {
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Scope</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="ALL">ALL</option>
-                        <option value="DIS">DIS</option>
-                        <option value="DCS">DCS</option>
+                        <option value="DIS">DIS Department</option>
+                        <option value="DCS">DCS Department</option>
                       </Field>
                     </div>
                     <div className="space-y-1.5">

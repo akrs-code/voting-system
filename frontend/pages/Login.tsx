@@ -169,7 +169,7 @@ export default function Login() {
                 <div className="flex gap-4">
                   <div className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-[#2f318d] flex items-center justify-center text-xs font-bold">2</div>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    Use the <span className="font-bold text-slate-800">password we sent on your institutional email </span> to log in.
+                    Use your<span className="font-bold text-slate-800"> password </span> to log in.
                   </p>
                 </div>
               </div>

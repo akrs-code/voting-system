@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cors from 'cors';
 import { Server } from 'socket.io';
-
+import compression from 'compression';
 import authRoutes from './routes/authRoutes.js';
 import electionRoutes from './routes/electionRoutes.js';
 import candidateRoutes from './routes/candidateRoutes.js';
@@ -29,6 +29,7 @@ const io = new Server(server, {
     }
 });
 
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));

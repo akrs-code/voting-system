@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Users, UserCheck, UserPlus, PieChart, Trophy, RefreshCcw, DownloadIcon } from 'lucide-react';
+import { Users, UserCheck, UserPlus, PieChart, Trophy, RefreshCcw, DownloadIcon, Loader2 } from 'lucide-react';
 import { ballotService } from '../services/ballotService';
 import { useActiveElection } from '../hooks/useActiveElection';
 import { socket } from '../services/socket';
@@ -21,9 +21,9 @@ const Dashboard = () => {
 
   const fetchData = useCallback(async (dept: string) => {
     if (!activeElection?._id) return;
-    
+
     const now = Date.now();
-    if (now - lastFetchTime.current < 1000) return; 
+    if (now - lastFetchTime.current < 1000) return;
     lastFetchTime.current = now;
 
     try {
@@ -77,8 +77,20 @@ const Dashboard = () => {
     generateExcelReport(activeElection, stats.totalVoters, stats, results);
   };
 
-  if (electionLoading) return <div className="h-screen flex items-center justify-center font-poppins text-slate-400">Syncing with MSU CICS Database...</div>;
-  if (!activeElection) return <div className="h-screen flex items-center justify-center font-poppins text-red-500 font-bold tracking-tight uppercase">No Active Election Event Found</div>;
+  if (electionLoading)
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-2 font-poppins text-[#2f318d] text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <p>Syncing with MSU CICS Database...</p>
+      </div>
+    );
+
+  if (!activeElection)
+    return (
+      <div className="h-screen flex items-center justify-center font-poppins text-red-500 text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
+        No Active Election Event Found
+      </div>
+    );
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8 font-poppins">
@@ -95,7 +107,7 @@ const Dashboard = () => {
             onClick={handleDownload}
             className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 md:px-6 py-3 md:h-12 rounded-xl font-semibold text-sm transition-colors shadow-sm"
           >
-            <DownloadIcon size={14} /> 
+            <DownloadIcon size={14} />
             <span className="whitespace-nowrap">Export Excel</span>
           </button>
 
@@ -104,9 +116,8 @@ const Dashboard = () => {
               <button
                 key={dept}
                 onClick={() => setSelectedDept(dept)}
-                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                  selectedDept === dept ? 'bg-[#2f318d] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-                }`}
+                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all ${selectedDept === dept ? 'bg-[#2f318d] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
               >
                 {dept}
               </button>

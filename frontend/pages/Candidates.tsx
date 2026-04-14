@@ -194,7 +194,6 @@ const Candidates = () => {
         </div>
       </div>
 
-      {/* DATA TABLE SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24">
@@ -378,7 +377,6 @@ const Candidates = () => {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Department Scope</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="ALL">ALL (College-Wide)</option>
                         <option value="DIS">DIS Department</option>
                         <option value="DCS">DCS Department</option>
                       </Field>

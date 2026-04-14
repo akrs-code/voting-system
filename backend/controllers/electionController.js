@@ -3,51 +3,18 @@ import Election from "../models/electionSchema.js";
 export const createElection = async (req, res) => {
     try {
         const { title, startDate, endDate } = req.body;
-        if (!title || !startDate || !endDate)
-            return res.status(400).json({ error: "All fields are required" });
-        if (new Date(startDate) >= new Date(endDate)) {
-            return res.status(400).json({ error: "Invalid timeframe" });
-        }
         const election = await Election.create({ title, startDate, endDate });
-        req.app.get('io')?.emit('newElectionCreated', election);
-        res.status(201).json({ message: "Election created", election });
+        req.io.emit('election_created', election);
+        res.status(201).json(election);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
-export const updateElection = async (req, res) => {
+export const getActiveElection = async (req, res) => {
     try {
-        const { id } = req.params;
-        const election = await Election.findByIdAndUpdate(id, req.body, { returnDocument: "after" });
-        if (!election) return res.status(404).json({ error: "Election not found" });
-        req.app.get('io')?.emit('electionStatusChanged', election);
-        res.json({ message: "Election updated", election });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-export const deleteElection = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const election = await Election.findByIdAndDelete(id);
-        if (!election) return res.status(404).json({ error: "Election not found" });
-        req.app.get('io')?.emit('electionStatusChanged', { id, deleted: true });
-        res.json({ message: "Election deleted" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-export const activateElection = async (req, res) => {
-    try {
-        const { id } = req.params;
-        await Election.updateMany({ isActive: true }, { isActive: false });
-        const election = await Election.findByIdAndUpdate(id, { isActive: true }, { returnDocument: "after" });
-        if (!election) return res.status(404).json({ error: "Election not found" });
-        req.app.get('io')?.emit('electionStatusChanged', election);
-        res.json({ message: "Election activated", election });
+        const election = await Election.findOne({ isActive: true });
+        res.json(election);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -62,10 +29,49 @@ export const getAllElections = async (req, res) => {
     }
 };
 
-export const getActiveElection = async (req, res) => {
+export const updateElection = async (req, res) => {
     try {
-        const election = await Election.findOne({ isActive: true });
-        res.json(election || null);
+        const election = await Election.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        req.io.emit('election_updated', election);
+        res.json(election);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const activateElection = async (req, res) => {
+    try {
+        await Election.updateMany({}, { isActive: false });
+        const election = await Election.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });
+        req.io.emit('election_activated', election._id);
+        res.json(election);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const toggleLockElection = async (req, res) => {
+    try {
+        const election = await Election.findById(req.params.id);
+        if (!election) return res.status(404).json({ message: "Election not found" });
+
+        election.isLocked = !election.isLocked;
+        await election.save();
+
+        res.json({
+            message: `Election ${election.isLocked ? "locked" : "unlocked"}`,
+            data: { election }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+};
+
+export const deleteElection = async (req, res) => {
+    try {
+        await Election.findByIdAndDelete(req.params.id);
+        req.io.emit('election_deleted', req.params.id);
+        res.json({ message: "Deleted" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -132,7 +132,7 @@ const Applications = () => {
         ) : filteredApps.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center px-4">
             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">Inbox clear. No pending applications.</p>
+            <p className="text-slate-200 text-[0.7rem] font-bold uppercase tracking-widest">Inbox clear. No pending applications.</p>
           </div>
         ) : (
           <>
@@ -201,7 +201,7 @@ const Applications = () => {
       </div>
 
       {showViewModal && selectedApp && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
           <div className="w-full max-w-md bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
             <button 
               onClick={() => setShowViewModal(false)} 
