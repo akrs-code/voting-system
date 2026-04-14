@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { 
-  Plus, Loader2, Trash2, X, 
-  CheckCircle2, AlertCircle 
+import {
+  Plus, Loader2, Trash2, X,
+  CheckCircle2, AlertCircle, Lock, Unlock
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -40,12 +40,27 @@ const Elections = () => {
     setProcessingId(id);
     try {
       await electionService.toggleActive(id);
-      setElections(prev => prev.map(el => ({ 
-        ...el, 
-        isActive: el._id === id ? !currentStatus : false 
+      setElections(prev => prev.map(el => ({
+        ...el,
+        isActive: el._id === id ? !currentStatus : false
       })));
     } catch (error) {
       alert("Status update failed. Please try again.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleToggleLock = async (id: string, currentLockStatus: boolean) => {
+    setProcessingId(id);
+    try {
+      await electionService.toggleLock(id);
+      setElections(prev => prev.map(el => ({
+        ...el,
+        isLocked: el._id === id ? !currentLockStatus : el.isLocked
+      })));
+    } catch (error) {
+      alert("Failed to update lock status.");
     } finally {
       setProcessingId(null);
     }
@@ -72,7 +87,7 @@ const Elections = () => {
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Election Management</h1>
           <p className="text-slate-500 text-xs md:text-sm mt-1">Configure voting timelines and manage active electoral cycles.</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           className="h-12 w-full md:w-auto bg-[#2f318d] hover:bg-[#26287a] text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
         >
@@ -121,33 +136,39 @@ const Elections = () => {
                       </div>
                     </td>
                     <td className="px-6 md:px-10 py-4 text-center">
-                      <div className={`inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border transition-all ${
-                        election.isActive 
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                          : 'bg-slate-50 text-slate-400 border-slate-100'
-                      }`}>
+                      <div className={`inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border transition-all ${election.isActive
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        : 'bg-slate-50 text-slate-400 border-slate-100'
+                        }`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${election.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
                         {election.isActive ? 'ACTIVE' : 'INACTIVE'}
                       </div>
                     </td>
                     <td className="px-6 md:px-10 py-4 text-right">
                       <div className="flex justify-end items-center gap-3">
-                        {/* Custom Toggle Switch */}
-                        <button 
+                        <button
                           disabled={processingId === election._id}
                           onClick={() => handleToggleActive(election._id, election.isActive)}
-                          className={`relative w-11 h-6 flex items-center rounded-full px-1 transition-all duration-300 ${
-                              election.isActive ? 'bg-[#2f318d]' : 'bg-slate-200'
-                          } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}`}
+                          className={`relative w-11 h-6 flex items-center rounded-full px-1 transition-all duration-300 ${election.isActive ? 'bg-[#2f318d]' : 'bg-slate-200'
+                            } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}`}
                         >
-                          <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-300 ${
-                              election.isActive ? 'translate-x-5' : 'translate-x-0'
-                          }`} />
+                          <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-300 ${election.isActive ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
                         </button>
-                        
+
                         <div className="h-8 w-px bg-slate-100 mx-1" />
-                        
-                        <button 
+                        <button
+                          disabled={processingId === election._id}
+                          onClick={() => handleToggleLock(election._id, election.isLocked)}
+                          className={`p-2 rounded-xl transition-all ${election.isLocked
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={election.isLocked ? "Unlock Election" : "Lock Election"}
+                        >
+                          {election.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                        </button>
+                        <button
                           onClick={() => handleDelete(election._id)}
                           className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
                         >
@@ -194,12 +215,11 @@ const Elections = () => {
                 <Form className="space-y-4 md:space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-xs md:text-sm font-semibold text-slate-700">Election Title</label>
-                    <Field 
-                      name="title" 
+                    <Field
+                      name="title"
                       placeholder="e.g. Student Council 2026"
-                      className={`h-12 md:h-14 w-full border px-4 md:px-5 rounded-2xl outline-none transition-all text-sm ${
-                        errors.title && touched.title ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'
-                      }`} 
+                      className={`h-12 md:h-14 w-full border px-4 md:px-5 rounded-2xl outline-none transition-all text-sm ${errors.title && touched.title ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'
+                        }`}
                     />
                     <ErrorMessage name="title" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                   </div>
@@ -207,38 +227,36 @@ const Elections = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Start Date</label>
-                      <Field 
-                        type="date" 
-                        name="startDate" 
-                        className={`h-12 md:h-14 w-full border bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none transition-all ${
-                          errors.startDate && touched.startDate ? 'border-red-300' : 'border-slate-200 focus:border-[#2f318d]'
-                        }`} 
+                      <Field
+                        type="date"
+                        name="startDate"
+                        className={`h-12 md:h-14 w-full border bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none transition-all ${errors.startDate && touched.startDate ? 'border-red-300' : 'border-slate-200 focus:border-[#2f318d]'
+                          }`}
                       />
                       <ErrorMessage name="startDate" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">End Date</label>
-                      <Field 
-                        type="date" 
-                        name="endDate" 
-                        className={`h-12 md:h-14 w-full border bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none transition-all ${
-                          errors.endDate && touched.endDate ? 'border-red-300' : 'border-slate-200 focus:border-[#2f318d]'
-                        }`} 
+                      <Field
+                        type="date"
+                        name="endDate"
+                        className={`h-12 md:h-14 w-full border bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none transition-all ${errors.endDate && touched.endDate ? 'border-red-300' : 'border-slate-200 focus:border-[#2f318d]'
+                          }`}
                       />
                       <ErrorMessage name="endDate" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                     </div>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting} 
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
                     className="h-12 md:h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-2 shadow-lg shadow-indigo-100"
                   >
                     {isSubmitting ? (
                       <Loader2 size={20} className="animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 size={18} /> 
+                        <CheckCircle2 size={18} />
                         <span>Initialize Election</span>
                       </>
                     )}
