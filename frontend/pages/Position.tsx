@@ -33,9 +33,6 @@ const Positions = () => {
     name: Yup.string()
       .min(2, "Position name is too short")
       .required("Position name is required"),
-    maxVote: Yup.number()
-      .min(1, "Minimum of 1 vote required")
-      .required("Max votes is required"),
     department: Yup.string().required("Department scope is required"),
     electionId: Yup.string().required("Election cycle is required"),
     yearLevel: Yup.string().nullable()
@@ -167,7 +164,6 @@ const Positions = () => {
                 <tr className="border-b border-slate-100 bg-slate-50/30">
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Position Details</th>
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] text-center uppercase tracking-widest opacity-70">Scope</th>
-                  <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Vote Limit</th>
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
                 </tr>
               </thead>
@@ -189,11 +185,6 @@ const Positions = () => {
                           {pos.yearLevel ? `Year ${pos.yearLevel}` : 'All Levels'}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 md:px-10 py-4 text-center">
-                      <span className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-600 border-slate-100 rounded-full border font-bold text-[10px]">
-                        {pos.maxVote} MAX
-                      </span>
                     </td>
                     <td className="px-6 md:px-10 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -228,7 +219,6 @@ const Positions = () => {
               enableReinitialize
               initialValues={{
                 name: selectedPos?.name || '',
-                maxVote: selectedPos?.maxVote || 1,
                 department: selectedPos?.department || 'DIS',
                 yearLevel: selectedPos?.yearLevel || '',
                 electionId: selectedPos?.election?._id || selectedPos?.election || selectedElectionId || '',
@@ -291,11 +281,6 @@ const Positions = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs md:text-sm font-semibold text-slate-700">Max Votes</label>
-                    <Field type="number" name="maxVote" className={`h-12 md:h-14 w-full border px-4 md:px-5 rounded-2xl outline-none transition-all text-sm ${errors.maxVote && touched.maxVote ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
-                    <ErrorMessage name="maxVote" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
-                  </div>
 
                   <button type="submit" disabled={isSubmitting} className="h-12 md:h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 mt-2">
                     {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <><CheckCircle2 size={18} /> {isEditing ? 'Update Position' : 'Confirm Position'}</>}

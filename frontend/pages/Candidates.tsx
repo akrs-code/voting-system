@@ -275,10 +275,10 @@ const Candidates = () => {
       {showModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
           <div className="w-full max-w-2xl bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
-            <button onClick={closeModal} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={closeModal} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600">
               <X size={20} />
             </button>
-            <div className="mb-6 md:mb-10 text-center sm:text-left">
+            <div className="mb-6 md:mb-10">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800">{isEditing ? 'Update Profile' : 'Register Candidate'}</h2>
               <p className="text-xs md:text-sm text-slate-500 mt-1">Configure candidate credentials and departmental scope.</p>
             </div>
@@ -344,7 +344,7 @@ const Candidates = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                  <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Full Identity</label>
                       <Field name="name" placeholder="John B. Doe" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
