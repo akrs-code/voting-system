@@ -18,16 +18,15 @@ export const getActiveElection = async (req, res) => {
 
 export const castBallot = async (req, res) => {
     const session = await mongoose.startSession();
-    session.startTransaction();
 
     try {
+        session.startTransaction();
+
         const { electionId, votes } = req.body;
         const userId = req.user.id;
 
-        const [user, election] = await Promise.all([
-            User.findById(userId).session(session),
-            Election.findById(electionId).session(session).lean()
-        ]);
+        const user = await User.findById(userId).session(session);
+        const election = await Election.findById(electionId).session(session);
 
         if (!user || !election?.isActive) {
             throw new Error("Invalid election or user.");
@@ -36,38 +35,41 @@ export const castBallot = async (req, res) => {
         if (user.votedElections.includes(electionId)) {
             throw new Error("Already voted.");
         }
-    
+
         user.votedElections.push(electionId);
         await user.save({ session });
 
         const ballot = await Ballot.create([{
             voter: userId,
             election: electionId,
-            votes: votes.map(v => ({ position: v.positionId, candidate: v.candidateId })),
+            votes: votes.map(v => ({
+                position: v.positionId,
+                candidate: v.candidateId
+            })),
             submitted: true
         }], { session });
 
         await session.commitTransaction();
-       
         session.endSession();
 
-        res.status(201).json({ message: "Ballot cast successfully", ballotId: ballot[0]._id });
-        
-    
+        res.status(201).json({
+            message: "Ballot cast successfully",
+            ballotId: ballot[0]._id
+        });
+
         req.app.get('io')?.emit('newVoteCast', { electionId });
+
         sendVoteEmail(user.email, user.name, election.title, [])
             .catch(err => console.error("Post-vote Email Error:", err));
 
     } catch (error) {
-      
-        if (session.inTransaction()) {
+        try {
             await session.abortTransaction();
-        }
+        } catch (e) {}
+
+        session.endSession();
+
         res.status(400).json({ error: error.message });
-    } finally {
-        if (!session.hasEnded) {
-            session.endSession();
-        }
     }
 };
 
