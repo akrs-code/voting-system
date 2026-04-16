@@ -5,10 +5,12 @@ import { authorizeRole } from '../middleware/authorizeRole.js';
 
 const router = express.Router();
 
-router.post('/', verifyToken, authorizeRole("admin"), createPosition);
-router.get('/form/data', verifyToken, getVotingForm);
-router.get('/:department', verifyToken, getPositionsByDepartment);
-router.put('/:id', verifyToken, authorizeRole("admin"), updatePosition);
-router.delete('/:id', verifyToken, authorizeRole("admin"), deletePosition);
+router.use(verifyToken);
+
+router.post('/', authorizeRole("admin"), createPosition);
+router.get('/voting-structure', getVotingForm);
+router.get('/dept/:department', getPositionsByDepartment);
+router.patch('/:id', authorizeRole("admin"), updatePosition);
+router.delete('/:id', authorizeRole("admin"), deletePosition);
 
 export default router;

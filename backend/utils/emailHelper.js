@@ -27,8 +27,8 @@ const logoPath = path.join(process.cwd(), 'public', 'cics.png');
 export const sendVoteEmail = async (userEmail, userName, electionName, votes) => {
   const voteRows = votes.map(v => `
     <div style="background-color: #ffffff; padding: 18px; border-radius: 24px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
-      <p style="margin: 0; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">${v.positionName}</p>
-      <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 700; color: #2f318d;">${v.candidateName}</p>
+      <p style="margin: 0; font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">${v.positionName}</p>
+      <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #2f318d;">${v.candidateName}</p>
     </div>
   `).join('');
 
@@ -37,16 +37,16 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="cid:cics-logo" alt="CICS Logo" style="height: 80px; width: 80px; margin-bottom: 20px;">
         <span style="${styles.badge}">Official MSU CICS Ballot</span>
-        <h1 style="font-size: 32px; font-weight: 800; color: #1e293b; margin: 0;">VOTE <span style="color: #2f318d;">CONFIRMED!</span></h1>
+        <h1 style="font-size: 32px; font-weight: 800; color: #1e293b; margin: 0;">BALLOT <span style="color: #2f318d;">RECEIPT</span></h1>
       </div>
       <div style="${styles.card}">
         <div style="text-align: center;">
           <div style="${styles.iconBox} background-color: #dcfce7; color: #16a34a;">✓</div>
-          <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 8px;">Hi ${userName},</h2>
+          <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">Hi ${userName},</h2>
           <p style="color: #64748b; font-size: 16px; margin-top: 0;">Your ballot for <b>${electionName}</b> has been securely recorded.</p>
         </div>
         <div style="margin: 35px 0;">
-          <h3 style="font-size: 13px; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; color: #475569; letter-spacing: 0.05em;">Transaction Summary</h3>
+          <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #475569; letter-spacing: 0.05em;">Transaction Summary</h3>
           ${voteRows}
         </div>
         <div style="background-color: #f1f5f9; padding: 22px; border-radius: 24px; text-align: center; border: 1px dashed #cbd5e1;">

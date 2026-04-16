@@ -216,7 +216,6 @@ export const bulkSignup = async (req, res) => {
     }
 };
 
-
 export const submitApplication = async (req, res) => {
     try {
         const { name, studentId, password, yearLevel, email, department } = req.body;
@@ -226,10 +225,19 @@ export const submitApplication = async (req, res) => {
         }
 
         const normalizedId = studentId.trim();
-        const existingUser = await User.findOne({ studentId: normalizedId });
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingUser = await User.findOne({ 
+            $or: [{ studentId: normalizedId }, { email: normalizedEmail }] 
+        });
 
         if (existingUser) {
-            return res.status(400).json({ error: "Application or account already exists with this ID" });
+            const isIdDup = existingUser.studentId === normalizedId;
+            return res.status(409).json({ 
+                error: isIdDup 
+                    ? `Student ID ${normalizedId} is already registered.` 
+                    : "This email address is already in use."
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -240,17 +248,19 @@ export const submitApplication = async (req, res) => {
             password: hashedPassword,
             department: department.toUpperCase(),
             yearLevel,
-            email,
+            email: normalizedEmail,
             role: "voter",
             isVerified: "pending"
         });
 
-        res.status(201).json({ message: "Application submitted successfully. Please wait for admin approval." });
+        res.status(201).json({ message: "Application submitted successfully." });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        if (error.code === 11000) {
+            return res.status(409).json({ error: "Duplicate registration data detected." });
+        }
+        res.status(500).json({ error: "Internal server error" });
     }
 };
-
 
 export const manageApplication = async (req, res) => {
     try {

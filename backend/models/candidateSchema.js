@@ -31,4 +31,8 @@ const candidateSchema = new mongoose.Schema({
     }
 });
 
+candidateSchema.index({ election: 1, position: 1 });
+
+candidateSchema.index({ election: 1, department: 1 });
+
 export default mongoose.model("Candidate", candidateSchema);

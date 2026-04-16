@@ -122,7 +122,7 @@ const Elections = () => {
                   <tr key={election._id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 md:px-10 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{election.title}</span>
+                        <span className="font-bold text-[#2f318d] text-sm md:text-[0.95rem]">{election.title}</span>
                         <div className="flex items-center gap-2 text-slate-400 text-[10px] md:text-xs mt-1.5 font-medium">
 
                           <span className="py-0.5 rounded-md mt-1 text-[11px]font-medium">

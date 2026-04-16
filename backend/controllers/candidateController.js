@@ -10,7 +10,7 @@ export const addCandidate = async (req, res) => {
             return res.status(400).json({ error: "Name, position, and electionId are required." });
         }
 
-        const existingPosition = await Position.findById(position);
+        const existingPosition = await Position.findById(position).lean();
         if (!existingPosition) {
             return res.status(404).json({ error: "The selected position does not exist." });
         }
@@ -33,7 +33,8 @@ export const addCandidate = async (req, res) => {
 
         const populatedCandidate = await Candidate.findById(newCandidate._id)
             .populate("position", "name")
-            .populate("election", "title");
+            .populate("election", "title")
+            .lean();
 
         res.status(201).json({ 
             message: "Candidate added successfully", 
@@ -51,8 +52,8 @@ export const getCandidatesByDepartment = async (req, res) => {
         const { electionId } = req.query;
 
         const query = {};
-        
-        if (electionId && electionId !== "") {
+    
+        if (electionId) {
             query.election = electionId;
         }
 
@@ -63,7 +64,8 @@ export const getCandidatesByDepartment = async (req, res) => {
         const candidates = await Candidate.find(query)
             .populate("position", "name maxVote")
             .populate("election", "title")
-            .sort({ name: 1 });
+            .sort({ name: 1 })
+            .lean(); 
             
         res.status(200).json(candidates);
     } catch (error) {
@@ -84,11 +86,12 @@ export const updateCandidate = async (req, res) => {
 
         const updatedCandidate = await Candidate.findByIdAndUpdate(
             id, 
-            finalUpdate, 
+            { $set: finalUpdate },
             { new: true, runValidators: true }
         )
         .populate("position", "name")
-        .populate("election", "title");
+        .populate("election", "title")
+        .lean();
 
         if (!updatedCandidate) {
             return res.status(404).json({ error: "Candidate not found" });

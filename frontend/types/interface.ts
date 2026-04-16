@@ -64,7 +64,6 @@ export interface Candidate {
 export interface Position {
   _id: string;
   name: string;
-  maxVote: number;
   department: "DIS" | "DCS";
   yearLevel: number | null;
   election: any;

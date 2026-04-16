@@ -34,4 +34,8 @@ const ballotSchema = new mongoose.Schema({
     }
 });
 
+ballotSchema.index({ voter: 1, election: 1 }, { unique: true });
+
+ballotSchema.index({ election: 1, createdAt: -1 });
+
 export default mongoose.model("Ballot", ballotSchema);

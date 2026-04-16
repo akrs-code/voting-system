@@ -56,4 +56,6 @@ const userSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+userSchema.index({ department: 1, isVerified: 1 });
+
 export default mongoose.model("User", userSchema);

@@ -90,7 +90,7 @@ export default function SignupApplication() {
                 <input
                   name="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="John M. Doe"
                   value={values.name}
                   onChange={handleChange}
                   onBlur={handleBlur}

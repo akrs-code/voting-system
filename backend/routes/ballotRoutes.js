@@ -9,9 +9,11 @@ import {
 
 const router = express.Router();
 
-router.post('/cast', verifyToken, castBallot);
-router.get('/results/:electionId', verifyToken, getElectionResultsByPosition);
-router.get('/stats/:electionId', verifyToken, getElectionStats);
-router.get('/:electionId/ballot', verifyToken, getBallot);
+router.use(verifyToken);
+
+router.post('/', castBallot);
+router.get('/:electionId', getBallot);
+router.get('/:electionId/results', getElectionResultsByPosition);
+router.get('/:electionId/stats', getElectionStats);
 
 export default router;
