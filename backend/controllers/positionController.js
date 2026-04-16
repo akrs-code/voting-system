@@ -31,14 +31,14 @@ export const getPositionsByDepartment = async (req, res) => {
         
         let query = {};
 
-        if (department !== 'ALL') {
-            query.$or = [{ department: department }, { department: "ALL" }];
-        }
-        
         if (electionId) {
             query.election = electionId;
         }
 
+        if (department !== 'ALL') {
+            query.department = { $in: [department, "ALL"] };
+        }
+        
         if (yearLevel) {
             query.yearLevel = yearLevel;
         }
@@ -49,7 +49,8 @@ export const getPositionsByDepartment = async (req, res) => {
 
         const positions = await Position.find(query)
             .populate('election', 'title')
-            .sort({ createdAt: -1 }); 
+            .sort({ createdAt: -1 })
+            .lean(); 
 
         res.status(200).json(positions);
     } catch (error) {
@@ -61,35 +62,25 @@ export const getVotingForm = async (req, res) => {
     try {
         const { department, yearLevel } = req.user; 
 
-        const activeElection = await Election.findOne({ isActive: true });
+        const activeElection = await Election.findOne({ isActive: true }).lean();
         if (!activeElection) {
             return res.status(404).json({ error: "No active election found" });
         }
-
         const positions = await Position.find({
             election: activeElection._id,
-            $or: [
-                { department: department }, 
-                { department: "ALL" }
-            ],
-            $or: [
-                { yearLevel: yearLevel },
-                { yearLevel: null } 
-            ]
-        });
+            department: { $in: [department, "ALL"] },
+            yearLevel: { $in: [yearLevel, null] }
+        }).lean();
 
-    
-        const formWithCandidates = await Promise.all(
-            positions.map(async (pos) => {
-                const candidates = await Candidate.find({ position: pos._id })
-                    .select('-__v');
-                
-                return {
-                    ...pos.toObject(),
-                    candidates
-                };
-            })
-        );
+        const positionIds = positions.map(p => p._id);
+        const allCandidates = await Candidate.find({ 
+            position: { $in: positionIds } 
+        }).select('-__v').lean();
+
+        const formWithCandidates = positions.map(pos => ({
+            ...pos,
+            candidates: allCandidates.filter(c => c.position.toString() === pos._id.toString())
+        }));
 
         res.status(200).json({
             electionName: activeElection.title,
@@ -105,19 +96,11 @@ export const getVotingForm = async (req, res) => {
 export const updatePosition = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, maxVote, department, yearLevel, election } = req.body;
-
         const updatedPosition = await Position.findByIdAndUpdate(
             id,
-            { 
-                name, 
-                maxVote, 
-                department, 
-                yearLevel, 
-                election
-            },
+            { $set: req.body },
             { new: true, runValidators: true }
-        );
+        ).lean();
 
         if (!updatedPosition) {
             return res.status(404).json({ error: "Position not found" });
@@ -138,12 +121,11 @@ export const deletePosition = async (req, res) => {
         if (!position) {
             return res.status(404).json({ error: "Position not found" });
         }
+    
         await Candidate.deleteMany({ position: id });
 
-        res.status(200).json({ message: "Position and associated candidates deleted successfully" });
+        res.status(200).json({ message: "Position and associated candidates deleted" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
-
-
