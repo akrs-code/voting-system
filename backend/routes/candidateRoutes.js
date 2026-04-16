@@ -12,7 +12,7 @@ import { upload } from "../config/cloudinaryConfig.js";
 const router = express.Router();
 
 router.post("/", verifyToken, authorizeRole("admin"), upload.single('image'), addCandidate);
-router.get("/:department", verifyToken, getCandidatesByDepartment);
+router.get("/dept/:department", verifyToken, getCandidatesByDepartment);
 router.patch("/:id", verifyToken, authorizeRole("admin"), upload.single('image'), updateCandidate); 
 router.delete("/:id", verifyToken, authorizeRole("admin"), removeCandidate);
 
