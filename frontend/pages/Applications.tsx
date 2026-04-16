@@ -45,7 +45,7 @@ const Applications = () => {
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
     const message = action === 'approved'
       ? "Approve this student for voting access?"
-      : "Reject and delete this application? An email will be sent to the user.";
+      : "Reject and delete this application?";
 
     if (!window.confirm(message)) return;
 
@@ -54,8 +54,9 @@ const Applications = () => {
       await authService.manageApplication(id, action);
       setApplications(prev => prev.filter(app => app._id !== id));
       setShowViewModal(false);
-    } catch (error) {
-      alert("Action failed. Please try again.");
+    } catch (error: any) {
+      const serverMessage = error.response?.data?.error || "Action failed. Please try again.";
+      alert(serverMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -203,13 +204,13 @@ const Applications = () => {
       {showViewModal && selectedApp && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
           <div className="w-full max-w-md bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
-            <button 
-              onClick={() => setShowViewModal(false)} 
+            <button
+              onClick={() => setShowViewModal(false)}
               className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-50 rounded-full"
             >
               <X size={20} />
             </button>
-            
+
             <div className="mb-8">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Application Details</h2>
               <p className="text-xs md:text-sm text-slate-500 mt-1">Verify student information before approval.</p>
@@ -227,7 +228,7 @@ const Applications = () => {
                     <span className="text-[10px] font-bold text-[#2f318d] uppercase tracking-widest opacity-60 mb-1">Institutional Email</span>
                     <span className="text-sm font-semibold text-slate-600">{selectedApp.email}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-[#2f318d] uppercase tracking-widest opacity-60 mb-1">Student ID Number</span>
                     <span className="text-sm font-mono font-bold text-slate-700">{selectedApp.studentId}</span>
@@ -251,7 +252,7 @@ const Applications = () => {
             </div>
 
             <div className="flex flex-col gap-3">
-              <button 
+              <button
                 disabled={isProcessing}
                 onClick={() => handleAction(selectedApp._id, 'approved')}
                 className="h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:bg-[#26287a] active:scale-[0.98] shadow-lg shadow-indigo-100 disabled:opacity-50"
@@ -259,7 +260,7 @@ const Applications = () => {
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <UserCheck size={18} />}
                 Approve Application
               </button>
-              <button 
+              <button
                 disabled={isProcessing}
                 onClick={() => handleAction(selectedApp._id, 'rejected')}
                 className="h-14 w-full bg-white border border-red-100 text-red-500 hover:bg-red-50 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50"
