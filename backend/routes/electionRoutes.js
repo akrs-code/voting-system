@@ -13,12 +13,13 @@ import { authorizeRole } from "../middleware/authorizeRole.js";
 
 const router = express.Router();
 
-router.get("/active", verifyToken, getActiveElection);
 router.get("/", verifyToken, authorizeRole("admin"), getAllElections);
+router.get("/active", verifyToken, getActiveElection);
 router.post("/", verifyToken, authorizeRole("admin"), createElection);
-router.put("/:id", verifyToken, authorizeRole("admin"), updateElection);
+router.patch("/:id", verifyToken, authorizeRole("admin"), updateElection);
 router.delete("/:id", verifyToken, authorizeRole("admin"), deleteElection);
-router.put("/activate/:id", verifyToken, authorizeRole("admin"), activateElection);
-router.put("/toggle-lock/:id", verifyToken, authorizeRole("admin"), toggleLockElection);
+
+router.patch("/:id/status", verifyToken, authorizeRole("admin"), activateElection);
+router.patch("/:id/lock", verifyToken, authorizeRole("admin"), toggleLockElection);
 
 export default router;

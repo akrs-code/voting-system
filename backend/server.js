@@ -14,8 +14,7 @@ import positionRoutes from './routes/positionRoutes.js';
 
 dotenv.config();
 
-if (!process.env.JWT_SECRET) {
-    console.error("JWT_SECRET not configured");
+if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
     process.exit(1);
 }
 
@@ -29,13 +28,12 @@ const io = new Server(server, {
     }
 });
 
+app.set('socketio', io);
+app.use(helmet());
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
-app.use(helmet());
-
-app.set('io', io);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
@@ -45,13 +43,14 @@ const API_PREFIX = "/api/v1";
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/elections`, electionRoutes);
 app.use(`${API_PREFIX}/candidates`, candidateRoutes);
-app.use(`${API_PREFIX}/ballot`, ballotRoutes);
+app.use(`${API_PREFIX}/ballots`, ballotRoutes);
 app.use(`${API_PREFIX}/positions`, positionRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("Connected to the database"))
-    .catch((err) => console.error("Database connection error:", err));
+    .then(() => {
+        const PORT = process.env.PORT || 5000;
+        server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch(() => process.exit(1));
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`The server is running at PORT ${PORT}`));
 export default app;

@@ -2,13 +2,13 @@ import API from "./api.ts";
 
 export const candidateService = {
   create: async (data: FormData) => {
-    const response = await API.post("/candidates/", data, {
+    const response = await API.post("/candidates", data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
   getAll: async (dept: string, electionId: string) => {
-    const response = await API.get(`/candidates/${dept}`, { 
+    const response = await API.get(`/candidates/dept/${dept}`, { 
       params: { electionId } 
     });
     return response.data;
