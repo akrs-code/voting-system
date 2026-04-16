@@ -8,26 +8,26 @@ export const login = async (req, res) => {
         const { studentId, password } = req.body;
 
         if (!studentId || !password) {
-            return res.status(400).json({ error: "Student ID and password are required" });
+            return res.status(400).json({ message: "Student ID and password are required" });
         }
 
         const normalizedId = studentId.trim();
         const user = await User.findOne({ studentId: normalizedId });
 
         if (!user) {
-            return res.status(401).json({ error: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
         if (user.role === "voter" && user.isVerified === "pending") {
             return res.status(403).json({ 
-                error: "Your account is still pending admin approval. Please wait or visit the BYTES office." 
+                message: "Your account is still pending admin approval. Please wait or visit the BYTES office." 
             });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({ error: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
         const token = jwt.sign(
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({ error: "Server error during login" });
+        res.status(500).json({ message: "Server error during login" });
     }
 };
 
@@ -59,14 +59,14 @@ export const signup = async (req, res) => {
         const { name, studentId, password, department, yearLevel, email, role } = req.body;
 
         if (!name || !studentId || !password || !department || !yearLevel || !email) {
-            return res.status(400).json({ error: "All required fields must be filled" });
+            return res.status(400).json({ message: "All required fields must be filled" });
         }
 
         const normalizedId = studentId.trim();
         const existingUser = await User.findOne({ studentId: normalizedId });
 
         if (existingUser) {
-            return res.status(400).json({ error: "User with this Student ID already exists" });
+            return res.status(400).json({ message: "User with this Student ID already exists" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,7 +87,7 @@ export const signup = async (req, res) => {
             studentId: newUser.studentId
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 
@@ -97,13 +97,13 @@ export const updateUser = async (req, res) => {
         const { name, studentId, password, department, yearLevel, role, email } = req.body;
 
         const user = await User.findById(id);
-        if (!user) return res.status(404).json({ error: "User not found" });
+        if (!user) return res.status(404).json({ message: "User not found" });
 
         if (studentId) {
             const normalizedId = studentId.trim()
             if (normalizedId !== user.studentId) {
                 const existingUser = await User.findOne({ studentId: normalizedId });
-                if (existingUser) return res.status(400).json({ error: "New Student ID already in use" });
+                if (existingUser) return res.status(400).json({ message: "New Student ID already in use" });
                 user.studentId = normalizedId;
             }
         }
@@ -121,7 +121,7 @@ export const updateUser = async (req, res) => {
         await user.save();
         res.json({ message: "User updated successfully" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to update user" });
+        res.status(500).json({ message: "Failed to update user" });
     }
 };
 
@@ -141,7 +141,7 @@ export const getAllUsers = async (req, res) => {
 
         res.json(usersWithStatus);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch users" });
+        res.status(500).json({ message: "Failed to fetch users" });
     }
 };
 
@@ -149,10 +149,10 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const deletedUser = await User.findByIdAndDelete(id);
-        if (!deletedUser) return res.status(404).json({ error: "User not found" });
+        if (!deletedUser) return res.status(404).json({ message: "User not found" });
         res.json({ message: "User deleted successfully" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to delete user" });
+        res.status(500).json({ message: "Failed to delete user" });
     }
 };
 
@@ -161,7 +161,7 @@ export const bulkSignup = async (req, res) => {
         const users = req.body;
 
         if (!Array.isArray(users) || users.length === 0) {
-            return res.status(400).json({ error: "Payload must be a non-empty array of users" });
+            return res.status(400).json({ message: "Payload must be a non-empty array of users" });
         }
 
         const studentIds = users.map((u) => u.studentId?.trim().toLowerCase());
@@ -212,7 +212,7 @@ export const bulkSignup = async (req, res) => {
             skippedDetails: skipped
         });
     } catch (error) {
-        res.status(500).json({ error: "Bulk signup failed", details: error.message });
+        res.status(500).json({ message: "Bulk signup failed", details: error.message });
     }
 };
 
@@ -221,7 +221,7 @@ export const submitApplication = async (req, res) => {
         const { name, studentId, password, yearLevel, email, department } = req.body;
 
         if (!name || !studentId || !password || !yearLevel || !email || !department) {
-            return res.status(400).json({ error: "All fields are required" });
+            return res.status(400).json({ message: "All fields are required" });
         }
 
         const normalizedId = studentId.trim();
@@ -234,7 +234,7 @@ export const submitApplication = async (req, res) => {
         if (existingUser) {
             const isIdDup = existingUser.studentId === normalizedId;
             return res.status(409).json({ 
-                error: isIdDup 
+                message: isIdDup 
                     ? `Student ID ${normalizedId} is already registered.` 
                     : "This email address is already in use."
             });
@@ -256,9 +256,9 @@ export const submitApplication = async (req, res) => {
         res.status(201).json({ message: "Application submitted successfully." });
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ error: "Duplicate registration data detected." });
+            return res.status(409).json({ message: "Duplicate registration data detected." });
         }
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -269,7 +269,7 @@ export const manageApplication = async (req, res) => {
         
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ error: "Application not found" });
+            return res.status(404).json({ message: "Application not found" });
         }
 
         if (status === "approved") {
@@ -279,7 +279,7 @@ export const manageApplication = async (req, res) => {
             try {
                 await sendStatusEmail(user.email, user.name, "approved");
             } catch (emailErr) {
-                console.error("Email error:", emailErr);
+                console.error("Email message:", emailErr);
             }
             
             return res.json({ message: "User approved and notified." });
@@ -293,15 +293,15 @@ export const manageApplication = async (req, res) => {
             try {
                 await sendStatusEmail(email, name, "rejected");
             } catch (emailErr) {
-                console.error("Email error:", emailErr);
+                console.error("Email message:", emailErr);
             }
             
             return res.json({ message: "Application rejected and user notified." });
         }
 
-        res.status(400).json({ error: "Invalid status" });
+        res.status(400).json({ message: "Invalid status" });
     } catch (error) {
-        res.status(500).json({ error: "Management action failed" });
+        res.status(500).json({ message: "Management action failed" });
     }
 };
 
@@ -314,6 +314,6 @@ export const getPendingApplications = async (req, res) => {
 
         res.json(applications);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch pending applications" });
+        res.status(500).json({ message: "Failed to fetch pending applications" });
     }
 };

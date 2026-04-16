@@ -7,17 +7,17 @@ export const addCandidate = async (req, res) => {
         const profilePicture = req.file ? req.file.path : "";
 
         if (!name || !position || !electionId) {
-            return res.status(400).json({ error: "Name, position, and electionId are required." });
+            return res.status(400).json({ message: "Name, position, and electionId are required." });
         }
 
         const existingPosition = await Position.findById(position).lean();
         if (!existingPosition) {
-            return res.status(404).json({ error: "The selected position does not exist." });
+            return res.status(404).json({ message: "The selected position does not exist." });
         }
 
         if (existingPosition.election.toString() !== electionId) {
             return res.status(400).json({ 
-                error: "Position/Election mismatch. This position does not belong to the selected election." 
+                message: "Position/Election mismatch. This position does not belong to the selected election." 
             });
         }
 
@@ -42,7 +42,7 @@ export const addCandidate = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -69,7 +69,7 @@ export const getCandidatesByDepartment = async (req, res) => {
             
         res.status(200).json(candidates);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -94,12 +94,12 @@ export const updateCandidate = async (req, res) => {
         .lean();
 
         if (!updatedCandidate) {
-            return res.status(404).json({ error: "Candidate not found" });
+            return res.status(404).json({ message: "Candidate not found" });
         }
 
         res.json({ message: "Candidate updated successfully", updatedCandidate });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -108,11 +108,11 @@ export const removeCandidate = async (req, res) => {
         const deletedCandidate = await Candidate.findByIdAndDelete(req.params.id);
         
         if (!deletedCandidate) {
-            return res.status(404).json({ error: "Candidate not found" });
+            return res.status(404).json({ message: "Candidate not found" });
         }
 
         res.json({ message: "Candidate removed successfully" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };

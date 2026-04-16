@@ -104,7 +104,7 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </div>
         ` : `
         <div style="text-align: center; margin-top: 10px;">
-          <a href="http://localhost:5173/login" style="${styles.button}">Access Voter Dashboard</a>
+          <a href="https://cicsvotingsystem.vercel.app/login" style="${styles.button}">Access Voter Dashboard</a>
         </div>
         `}
       </div>
