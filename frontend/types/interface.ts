@@ -54,7 +54,7 @@ export interface Candidate {
   _id: string;
   name: string;
   partylist: string;
-  department: "DIS" | "DCS";
+  department: "DIS" | "DCS" | "ALL";
   yearLevel: number | null;
   position: { _id: string; name: string };
   election: { _id: string; title: string };
@@ -64,7 +64,8 @@ export interface Candidate {
 export interface Position {
   _id: string;
   name: string;
-  department: "DIS" | "DCS";
+  maxVote: number;
+  department: "DIS" | "DCS" | "ALL";
   yearLevel: number | null;
   election: any;
 }

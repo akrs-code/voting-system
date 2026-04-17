@@ -35,7 +35,10 @@ const Positions = () => {
       .required("Position name is required"),
     department: Yup.string().required("Department scope is required"),
     electionId: Yup.string().required("Election cycle is required"),
-    yearLevel: Yup.string().nullable()
+    yearLevel: Yup.string().nullable(),
+    maxVote: Yup.number()
+      .min(1, "Must allow at least 1 vote")
+      .required("Max votes is required")
   });
 
   const fetchData = async () => {
@@ -164,6 +167,7 @@ const Positions = () => {
                 <tr className="border-b border-slate-100 bg-slate-50/30">
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Position Details</th>
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] text-center uppercase tracking-widest opacity-70">Scope</th>
+                  <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] text-center uppercase tracking-widest opacity-70">Max Vote</th>
                   <th className="px-6 md:px-10 py-4 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
                 </tr>
               </thead>
@@ -181,11 +185,22 @@ const Positions = () => {
                         <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
                           {pos.department}
                         </span>
+                        
                         <span className="text-slate-400 text-[11px] font-semibold">
                           {pos.yearLevel ? `Year ${pos.yearLevel}` : 'All Levels'}
                         </span>
                       </div>
                     </td>
+                    
+                    <td className="px-6 md:px-10 py-4 text-center">
+                      <div className="flex justify-center gap-2 items-center">
+                       
+                        <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-[#2f318d]-50 rounded-md border border-[#2f318d]-100 uppercase">
+                          Max: {pos.maxVote || 0}
+                        </span>
+                      </div>
+                    </td>
+
                     <td className="px-6 md:px-10 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleOpenModal(pos)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all">
@@ -222,6 +237,7 @@ const Positions = () => {
                 department: selectedPos?.department || 'DIS',
                 yearLevel: selectedPos?.yearLevel || '',
                 electionId: selectedPos?.election?._id || selectedPos?.election || selectedElectionId || '',
+                maxVote: selectedPos?.maxVote || 1,
               }}
               validationSchema={validationSchema}
               onSubmit={async (values, { setSubmitting }) => {
@@ -229,7 +245,8 @@ const Positions = () => {
                   const payload = {
                     ...values,
                     yearLevel: values.yearLevel === "" ? null : Number(values.yearLevel),
-                    election: values.electionId
+                    election: values.electionId,
+                    maxVote: Number(values.maxVote),
                   };
 
                   if (isEditing && selectedPos) {
@@ -254,24 +271,26 @@ const Positions = () => {
                     <Field name="name" placeholder="e.g. Prime Minister" className={`h-12 md:h-14 w-full border px-4 md:px-5 rounded-2xl outline-none transition-all text-sm ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
                     <ErrorMessage name="name" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs md:text-sm font-semibold text-slate-700">Election Cycle</label>
-                    <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                      <option value="">Select Cycle...</option>
-                      {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
-                    </Field>
-                    <ErrorMessage name="electionId" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div className="space-y-1.5">
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Election Cycle</label>
+                      <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
+                        <option value="">Select Cycle...</option>
+                        {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
+                      </Field>
+                      <ErrorMessage name="electionId" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
+                    </div>
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Scope</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
+                        <option value="ALL">All Department</option>
                         <option value="DIS">DIS Department</option>
                         <option value="DCS">DCS Department</option>
                       </Field>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Year</label>
                       <Field as="select" name="yearLevel" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
@@ -279,6 +298,16 @@ const Positions = () => {
                         {[1, 2, 3, 4].map(lvl => <option key={lvl} value={lvl}>Year {lvl}</option>)}
                       </Field>
                     </div>
+                    <div className="space-y-1.5 col-span-1 md:col-span-1">
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Max Votes</label>
+                      <Field
+                        type="number"
+                        name="maxVote"
+                        className={`h-12 md:h-14 w-full border px-4 rounded-2xl text-sm font-bold text-[#2f318d] outline-none transition-all ${errors.maxVote && touched.maxVote ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`}
+                      />
+                      <ErrorMessage name="maxVote" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
+                    </div>
+
                   </div>
 
 

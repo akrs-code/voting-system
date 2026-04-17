@@ -7,7 +7,7 @@ const positionSchema = new mongoose.Schema({
 
   department: {
     type: String,
-    enum: ["DIS", "DCS"],
+    enum: ["DIS", "DCS", "ALL"],
   },
 
   yearLevel: {
@@ -21,6 +21,7 @@ const positionSchema = new mongoose.Schema({
     ref: 'Election',
     required: true
   },
+  maxVote: { type: Number, default: 1 },
 
 });
 
