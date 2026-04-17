@@ -18,7 +18,7 @@ const Applications = () => {
   const [applications, setApplications] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [deptFilter, setDeptFilter] = useState<string>('all');
+  const [deptFilter, setDeptFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -71,7 +71,7 @@ const Applications = () => {
     return applications.filter(app => {
       const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.studentId.includes(searchQuery);
-      const matchesDept = deptFilter === 'all' ? true : app.department === deptFilter;
+      const matchesDept = deptFilter === 'ALL' ? true : app.department === deptFilter;
       return matchesSearch && matchesDept;
     });
   }, [applications, searchQuery, deptFilter]);
@@ -117,9 +117,9 @@ const Applications = () => {
             onChange={(e) => setDeptFilter(e.target.value)}
             className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
           >
-            <option value="all">All Departments</option>
-            <option value="DIS">DIS</option>
-            <option value="DCS">DCS</option>
+            <option value="ALL">ALL Departments</option>
+            <option value="DIS">DIS Department</option>
+            <option value="DCS">DCS Department</option>
           </select>
         </div>
       </div>
@@ -132,8 +132,8 @@ const Applications = () => {
           </div>
         ) : filteredApps.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-            <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-200 text-[0.7rem] font-bold uppercase tracking-widest">Inbox clear. No pending applications.</p>
+          <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
+            <p className="text-slate-400 font-medium">Inbox clear. No pending applications.</p>
           </div>
         ) : (
           <>

@@ -1,17 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
-  Plus,
-  Loader2,
-  Trash2,
-  X,
-  Edit3,
-  CheckCircle2,
-  AlertCircle,
-  Search,
-  Building2,
-  Briefcase,
-  Camera,
-  ChevronDown,
+  Plus, Loader2, Trash2, X, Edit3, CheckCircle2, AlertCircle,
+  Search, Building2, Briefcase, Camera, ChevronDown,
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from 'formik';
 import * as Yup from 'yup';
@@ -21,11 +11,20 @@ import { electionService } from '../services/electionService';
 import Pagination from '../components/Pagination';
 import { Candidate } from 'types/interface';
 
-const FormWatcher = ({ onElectionChange }: { onElectionChange: (id: string) => void }) => {
-  const { values } = useFormikContext<{ electionId: string }>();
+const FormWatcher = ({ onFilterChange }: { onFilterChange: (electionId: string, dept: string) => void }) => {
+  const { values, setFieldValue } = useFormikContext<{ electionId: string; department: string; position: string }>();
+  const prevValues = useRef({ electionId: values.electionId, department: values.department });
+
   useEffect(() => {
-    onElectionChange(values.electionId);
-  }, [values.electionId, onElectionChange]);
+    if (prevValues.current.electionId !== values.electionId || prevValues.current.department !== values.department) {
+      setFieldValue('position', '');
+      prevValues.current = { electionId: values.electionId, department: values.department };
+    }
+    if (values.electionId) {
+      onFilterChange(values.electionId, values.department);
+    }
+  }, [values.electionId, values.department, onFilterChange, setFieldValue]);
+
   return null;
 };
 
@@ -36,22 +35,18 @@ const Candidates = () => {
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
   const [selectedElectionId, setSelectedElectionId] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCand, setSelectedCand] = useState<Candidate | null>(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const validationSchema = Yup.object({
     name: Yup.string().min(3, "Name too short").required("Full name is required"),
     partylist: Yup.string().required("Partylist is required"),
-    department: Yup.string().required("Department is required"),
     position: Yup.string().required("Position is required"),
     electionId: Yup.string().required("Election cycle is required"),
     yearLevel: Yup.number().nullable().transform((v) => (v === "" || isNaN(v) ? null : v)),
@@ -67,22 +62,22 @@ const Candidates = () => {
       setCandidates(candData);
       setElections(elData);
     } catch (error) {
-      console.error("Fetch Error:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   }, [selectedDepartment, selectedElectionId]);
 
-  const handleElectionChangeInModal = useCallback(async (electionId: string) => {
+  const handleModalFilterChange = useCallback(async (electionId: string, department: string) => {
     if (!electionId) {
       setModalPositions([]);
       return;
     }
     try {
-      const data = await positionService.getPositions("ALL", electionId);
+      const data = await positionService.getPositions(department, electionId);
       setModalPositions(data);
     } catch (error) {
-      console.error("Position Fetch Error:", error);
+      setModalPositions([]);
     }
   }, []);
 
@@ -127,7 +122,7 @@ const Candidates = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Permanent Action: Remove this candidate from the registry?")) return;
+    if (!window.confirm("Permanent Action: Remove this candidate?")) return;
     try {
       await candidateService.delete(id);
       fetchData();
@@ -144,7 +139,7 @@ const Candidates = () => {
             MSU CICS Administration
           </h2>
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Candidate Registry</h1>
-          <p className="text-slate-500 text-xs md:text-sm mt-1">Found {filteredCandidates.length} registered candidates in the system.</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">Found {filteredCandidates.length} registered candidates.</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -154,12 +149,13 @@ const Candidates = () => {
           <span>Add Candidate</span>
         </button>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="relative group sm:col-span-2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Search by name, partylist, or position..."
+            placeholder="Search candidates..."
             className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -203,11 +199,11 @@ const Candidates = () => {
         ) : filteredCandidates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center px-4">
             <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
-            <p className="text-slate-400 font-medium">No candidates match your current search or filters.</p>
+            <p className="text-slate-400 font-medium">No candidates match your current filters.</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto scrollbar-hide">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-200">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
@@ -280,7 +276,7 @@ const Candidates = () => {
             </button>
             <div className="mb-6 md:mb-10">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800">{isEditing ? 'Update Profile' : 'Register Candidate'}</h2>
-              <p className="text-xs md:text-sm text-slate-500 mt-1">Configure candidate credentials and departmental scope.</p>
+              <p className="text-xs md:text-sm text-slate-500 mt-1">Configure candidate credentials.</p>
             </div>
 
             <Formik
@@ -288,34 +284,34 @@ const Candidates = () => {
               initialValues={{
                 name: selectedCand?.name || '',
                 partylist: selectedCand?.partylist || '',
-                department: selectedCand?.department || 'ALL',
                 position: selectedCand?.position?._id || '',
                 electionId: selectedCand?.election?._id || selectedElectionId || '',
                 yearLevel: selectedCand?.yearLevel || '',
+                department: selectedCand?.department || 'ALL',
               }}
               validationSchema={validationSchema}
               onSubmit={async (values, { setSubmitting, resetForm }) => {
                 try {
                   const formData = new FormData();
-                  Object.entries(values).forEach(([key, value]) => {
+                  const { department, ...dataToSave } = values;
+
+                  Object.entries(dataToSave).forEach(([key, value]) => {
                     if (value !== null && value !== '') formData.append(key, String(value));
                   });
 
                   if (fileInputRef.current?.files?.[0]) {
                     formData.append('image', fileInputRef.current.files[0]);
                   }
-
                   if (isEditing && selectedCand) {
                     await candidateService.update(selectedCand._id, formData);
                   } else {
                     await candidateService.create(formData);
                   }
-
                   closeModal();
                   resetForm();
                   fetchData();
                 } catch (err: any) {
-                  alert(err.response?.data?.error || "Transaction encountered an error.");
+                  alert(err.response?.data?.error || "Error encountered.");
                 } finally {
                   setSubmitting(false);
                 }
@@ -323,7 +319,7 @@ const Candidates = () => {
             >
               {({ isSubmitting, errors, touched, values }) => (
                 <Form className="space-y-6">
-                  <FormWatcher onElectionChange={handleElectionChangeInModal} />
+                  <FormWatcher onFilterChange={handleModalFilterChange} />
                   
                   <div className="flex justify-center mb-6">
                     <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -344,7 +340,7 @@ const Candidates = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-2 gap-x-6 gap-y-5">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Full Identity</label>
                       <Field name="name" placeholder="John B. Doe" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
@@ -366,20 +362,23 @@ const Candidates = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Target Position</label>
-                      <Field as="select" name="position" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="">{values.electionId ? "Select Official Position..." : "Awaiting Election selection..."}</option>
-                        {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
-                      </Field>
-                      <ErrorMessage name="position" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
-                    </div>
-
-                    <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Department Scope</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="ALL">ALL Department</option>
                         <option value="DIS">DIS Department</option>
                         <option value="DCS">DCS Department</option>
                       </Field>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Target Position</label>
+                      <Field as="select" name="position" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
+                        <option value="">
+                          {!values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position..."}
+                        </option>
+                        {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
+                      </Field>
+                      <ErrorMessage name="position" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
 
                     <div className="space-y-1.5">
