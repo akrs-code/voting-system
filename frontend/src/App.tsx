@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { useAuth } from "../hooks/useAuth";
 import AdminLayout from "../components/AdminLayout";
 import VoterLayout from "../components/VoterLayout";
@@ -58,6 +59,7 @@ function App() {
         <Route path="/unauthorized" element={<div>Unauthorized</div>} />
         <Route path="*" element={<div>404 Not Found</div>} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
