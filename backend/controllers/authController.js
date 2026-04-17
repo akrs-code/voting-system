@@ -127,7 +127,7 @@ export const updateUser = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({ role: "voter" })
+        const users = await User.find({ role: "voter", isVerified: "approved" }) 
             .select("-password")
             .sort({ name: 1 });
 

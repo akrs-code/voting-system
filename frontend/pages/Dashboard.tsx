@@ -28,9 +28,11 @@ const Dashboard = () => {
 
     try {
       setLoading(true);
+      const statsDeptParam = dept === 'ALL' ? '' : dept;
+
       const [resData, statsData] = await Promise.all([
         ballotService.getResults(activeElection._id),
-        ballotService.getStats(activeElection._id, dept)
+        ballotService.getStats(activeElection._id, statsDeptParam)
       ]);
 
       setResults(resData || []);
@@ -68,9 +70,10 @@ const Dashboard = () => {
 
   const filteredResults = useMemo(() => {
     if (selectedDept === 'ALL') return results;
-    return results.filter(pos =>
-      pos.department === selectedDept || pos.department === 'ALL'
-    );
+    return results.filter(pos => {
+      const posDept = pos.department?.toUpperCase();
+      return posDept === selectedDept || posDept === 'ALL';
+    });
   }, [results, selectedDept]);
 
   const handleDownload = () => {
@@ -81,14 +84,14 @@ const Dashboard = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-2 font-poppins text-[#2f318d] text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <p>Syncing with MSU CICS Database...</p>
+        <p>Syncing MSU CICS Database...</p>
       </div>
     );
 
   if (!activeElection)
     return (
       <div className="h-screen flex items-center justify-center font-poppins text-red-500 text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
-        No Active Election Event Found
+        No Active Election Found
       </div>
     );
 
@@ -116,8 +119,7 @@ const Dashboard = () => {
               <button
                 key={dept}
                 onClick={() => setSelectedDept(dept)}
-                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all ${selectedDept === dept ? 'bg-[#2f318d] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
+                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all ${selectedDept === dept ? 'bg-[#2f318d] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 {dept}
               </button>
@@ -140,7 +142,7 @@ const Dashboard = () => {
               <div>
                 <h3 className="text-base md:text-lg font-bold text-slate-800 leading-tight">{pos.positionName}</h3>
                 <span className="text-[9px] md:text-[10px] font-bold text-[#2f318d] uppercase tracking-widest opacity-60">
-                  {pos.department === 'ALL' ? 'College-wide' : `${pos.department} Department`}
+                  {pos.department === 'ALL' || !pos.department ? 'College-wide' : `${pos.department} Department`}
                 </span>
               </div>
               <div className="text-right">
@@ -150,27 +152,30 @@ const Dashboard = () => {
             </div>
 
             <div className="p-5 md:p-6 space-y-5 md:space-y-6 flex-1">
-              {pos.candidates.map((candidate: any, idx: number) => (
-                <div key={candidate.candidateId} className="space-y-2">
-                  <div className="flex justify-between items-end gap-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      {idx === 0 && candidate.totalVotes > 0 && <Trophy size={14} className="text-yellow-500 shrink-0" />}
-                      <span className={`font-bold text-xs md:text-sm truncate ${idx === 0 ? 'text-slate-800' : 'text-slate-600'}`}>
-                        {candidate.name}
+              {pos.candidates.map((candidate: any, idx: number) => {
+                const isLeading = idx === 0 && candidate.totalVotes > 0;
+                return (
+                  <div key={candidate.candidateId} className="space-y-2">
+                    <div className="flex justify-between items-end gap-2">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {isLeading && <Trophy size={14} className="text-yellow-500 shrink-0" />}
+                        <span className={`font-bold text-xs md:text-sm truncate ${isLeading ? 'text-slate-800' : 'text-slate-600'}`}>
+                          {candidate.name}
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-[#2f318d] shrink-0">
+                        {candidate.totalVotes} <span className="text-[10px] text-slate-400 font-semibold">({candidate.percentage}%)</span>
                       </span>
                     </div>
-                    <span className="text-xs font-black text-[#2f318d] shrink-0">
-                      {candidate.totalVotes} <span className="text-[10px] text-xs  text-slate-400 font-semibold">({candidate.percentage}%)</span>
-                    </span>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-1000 ${isLeading ? 'bg-[#2f318d]' : 'bg-slate-300'}`}
+                        style={{ width: `${candidate.percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-1000 ${idx === 0 ? 'bg-[#2f318d]' : 'bg-slate-300'}`}
-                      style={{ width: `${candidate.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {pos.candidates.length === 0 && <p className="text-center text-slate-300 text-xs py-4 italic">No candidates registered</p>}
             </div>
           </div>
@@ -181,7 +186,7 @@ const Dashboard = () => {
 };
 
 const StatCard = ({ title, value, icon, color }: any) => (
-  <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-4xl border border-slate-200 shadow-sm flex flex-row items-center gap-3 md:gap-4">
+  <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-4xl border border-slate-200 shadow-sm flex flex-row items-center gap-3 md:gap-4 transition-transform hover:scale-[1.01]">
     <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl shrink-0 flex items-center justify-center ${color}`}>
       {icon}
     </div>
