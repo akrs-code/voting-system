@@ -49,7 +49,6 @@ const Candidates = () => {
     partylist: Yup.string().required("Partylist is required"),
     position: Yup.string().required("Position is required"),
     electionId: Yup.string().required("Election cycle is required"),
-    yearLevel: Yup.number().nullable().transform((v) => (v === "" || isNaN(v) ? null : v)),
   });
 
   const fetchData = useCallback(async () => {
@@ -239,7 +238,6 @@ const Candidates = () => {
                           <span className="px-3 py-1 bg-indigo-50 text-[#2f318d] border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wide">
                             {c.department}
                           </span>
-                          {c.yearLevel && <span className="text-[10px] text-slate-400 font-bold">Year {c.yearLevel}</span>}
                         </div>
                       </td>
                       <td className="px-6 md:px-10 py-5 text-right">
@@ -286,7 +284,6 @@ const Candidates = () => {
                 partylist: selectedCand?.partylist || '',
                 position: selectedCand?.position?._id || '',
                 electionId: selectedCand?.election?._id || selectedElectionId || '',
-                yearLevel: selectedCand?.yearLevel || '',
                 department: selectedCand?.department || 'ALL',
               }}
               validationSchema={validationSchema}
@@ -379,14 +376,6 @@ const Candidates = () => {
                         {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
                       </Field>
                       <ErrorMessage name="position" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Year Level (Optional)</label>
-                      <Field as="select" name="yearLevel" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="">Not Applicable</option>
-                        {[1, 2, 3, 4].map(y => <option key={y} value={y}>{y}{y === 1 ? 'st' : y === 2 ? 'nd' : y === 3 ? 'rd' : 'th'} Year</option>)}
-                      </Field>
                     </div>
                   </div>
 

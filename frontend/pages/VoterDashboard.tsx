@@ -46,35 +46,35 @@ const VoterDashboard = () => {
   };
 
 
-const handleSelect = (positionId: string, candidateId: string, maxVote: number) => {
-  setSelectedVotes(prev => {
-    const currentSelection = prev[positionId] || [];
-    const isAlreadySelected = currentSelection.includes(candidateId);
+  const handleSelect = (positionId: string, candidateId: string, maxVote: number) => {
+    setSelectedVotes(prev => {
+      const currentSelection = prev[positionId] || [];
+      const isAlreadySelected = currentSelection.includes(candidateId);
 
-    if (isAlreadySelected) {
-      return {
-        ...prev,
-        [positionId]: currentSelection.filter(id => id !== candidateId)
-      };
-    }
+      if (isAlreadySelected) {
+        return {
+          ...prev,
+          [positionId]: currentSelection.filter(id => id !== candidateId)
+        };
+      }
 
-    if (maxVote === 1) {
-      return {
-        ...prev,
-        [positionId]: [candidateId]
-      };
-    }
+      if (maxVote === 1) {
+        return {
+          ...prev,
+          [positionId]: [candidateId]
+        };
+      }
 
-    if (currentSelection.length < maxVote) {
-      return {
-        ...prev,
-        [positionId]: [...currentSelection, candidateId]
-      };
-    }
+      if (currentSelection.length < maxVote) {
+        return {
+          ...prev,
+          [positionId]: [...currentSelection, candidateId]
+        };
+      }
 
-    return prev;
-  });
-};
+      return prev;
+    });
+  };
 
   const filledCount = Object.values(selectedVotes).filter(arr => arr.length > 0).length;
 
@@ -84,7 +84,7 @@ const handleSelect = (positionId: string, candidateId: string, maxVote: number) 
     try {
       const votesArray = Object.entries(selectedVotes).map(([pId, candidateIds]) => ({
         positionId: pId,
-        candidateIds: candidateIds 
+        candidateIds: candidateIds
       }));
 
       await ballotService.castBallot({
@@ -187,7 +187,7 @@ const handleSelect = (positionId: string, candidateId: string, maxVote: number) 
                     return (
                       <div
                         key={candidate.candidateId}
-                       onClick={() => handleSelect(pos.positionId, candidate.candidateId, maxVote)}
+                        onClick={() => handleSelect(pos.positionId, candidate.candidateId, maxVote)}
                         className={`group relative cursor-pointer w-full max-w-70 sm:max-w-none sm:w-65 lg:w-70 aspect-3/4 rounded-4xl overflow-hidden transition-all duration-500 ease-out border-2
                           ${isSelected
                             ? "border-[#2f318d] shadow-2xl shadow-indigo-900/30 scale-[1.02] md:scale-105"
@@ -250,7 +250,7 @@ const handleSelect = (positionId: string, candidateId: string, maxVote: number) 
       </div>
 
       <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 w-[95%] sm:w-[92%] max-w-2xl z-40 transition-all duration-500">
-        <div className="bg-white/90 backdrop-blur-xl border border-slate-200/50 shadow-[0_20px_50px_rgba(47,49,141,0.15)] rounded-3xl md:rounded-4xl p-3 md:p-4 flex justify-between items-center px-5 md:px-8">
+        <div className="bg-white/90 border border-slate-200/50 shadow-[0_20px_50px_rgba(47,49,141,0.15)] rounded-3xl md:rounded-4xl p-3 md:p-4 flex justify-between items-center px-5 md:px-8">
           <div className="flex flex-col">
             <span className="text-[9px] md:text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Your Progress</span>
             <div className="flex items-baseline gap-1">
@@ -329,7 +329,7 @@ const handleSelect = (positionId: string, candidateId: string, maxVote: number) 
                               No Candidate Selected (Abstain)
                             </p>
                           ) : (
-                            // ✅ List all selected candidates
+
                             <div className="flex flex-col gap-0.5">
                               {selectedCandidates.map((c: any, i: number) => (
                                 <p key={c.candidateId} className="text-xs md:text-base font-bold text-slate-800">
@@ -349,22 +349,29 @@ const handleSelect = (positionId: string, candidateId: string, maxVote: number) 
               </div>
             </div>
 
-            <div className="p-5 md:p-8 bg-white border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 md:gap-4 shrink-0">
+            <div className="p-5 md:p-8 bg-white border-t border-slate-100 flex flex-col gap-3 sm:flex-row md:gap-4 shrink-0">
               <button
                 onClick={() => setShowReview(false)}
-                className="flex-1 h-11 md:h-14 font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-xl md:rounded-2xl transition-colors text-xs md:text-sm"
+                className="w-full sm:flex-1 h-12 md:h-14 font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-xl md:rounded-2xl transition-colors text-xs md:text-sm order-2 sm:order-1"
               >
                 Edit Selections
               </button>
+
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-2 h-11 md:h-14 bg-[#2f318d] text-white rounded-xl md:rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 text-xs md:text-sm"
+                className="w-full sm:flex-2 h-12 md:h-14 bg-[#2f318d] text-white rounded-xl md:rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 text-xs md:text-sm order-1 sm:order-2"
               >
                 {submitting ? (
-                  <><Loader2 className="animate-spin" size={16} /> Processing...</>
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    <span>Processing...</span>
+                  </>
                 ) : (
-                  <>Cast Final Vote <ArrowRight size={16} /></>
+                  <>
+                    <span>Cast Final Vote</span>
+                    <ArrowRight size={16} />
+                  </>
                 )}
               </button>
             </div>

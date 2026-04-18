@@ -55,7 +55,6 @@ export interface Candidate {
   name: string;
   partylist: string;
   department: "DIS" | "DCS" | "ALL";
-  yearLevel: number | null;
   position: { _id: string; name: string };
   election: { _id: string; title: string };
   profilePicture?: string;
