@@ -17,6 +17,10 @@ export const verifyToken = async (req, res, next) => {
         if (!user)
             return res.status(401).json({ error: "User not found" });
 
+
+        if (user.isVerified !== "approved")            
+            return res.status(403).json({ error: "Account not approved" });
+
         req.user = user;
 
         next();

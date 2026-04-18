@@ -29,7 +29,16 @@ const io = new Server(server, {
 });
 
 app.set('socketio', io);
-app.use(helmet());
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            "default-src": ["'self'"],
+            "script-src": ["'self'"],
+        },
+    },
+}));
+
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(compression());
 app.use(express.json());
