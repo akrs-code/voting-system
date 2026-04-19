@@ -16,19 +16,25 @@ export const generateExcelReport = (
   const abstentionRate = (100 - parseFloat(turnoutRate)).toFixed(2);
 
   const overview = [
-    ["ELECTION OVERVIEW SUMMARY"],
+    ["MSU CICS ELECTION ANALYTICS REPORT"],
     ["Election Title", activeElection.title],
-    ["Generated", timestamp],
+    ["Report Generated", timestamp],
+    ["Total Registered Voters", totalRegistered],
     [],
-    ["STATISTICS"],
+    ["ELECTION STATISTICS"],
+    ["Metric", "Value"],
     ["Total Registered Voters", totalRegistered],
     ["Total Ballots Cast", totalVotes],
     ["Total Candidates", stats.totalCandidates],
-    ["Final Turnout Rate", `${turnoutRate}%`],
+    ["Turnout Rate", `${turnoutRate}%`],
     ["Abstention Rate", `${abstentionRate}%`],
     [],
-    ["Narrative Summary", 
-     `As of ${timestamp}, the election "${activeElection.title}" recorded a turnout of ${turnoutRate}%, with ${totalVotes} out of ${totalRegistered} voters participating.`]
+    ["EXECUTIVE SUMMARY"],
+    [`Election: ${activeElection.title}`],
+    [`Generated: ${timestamp}`],
+    [`Turnout: ${turnoutRate}% (${totalVotes} out of ${totalRegistered} voters participated)`],
+    [`Total Candidates: ${stats.totalCandidates} across all positions`],
+    [`Abstention Rate: ${abstentionRate}% (${totalRegistered - totalVotes} voters did not participate)`]
   ];
 
   const wsOverview = XLSX.utils.aoa_to_sheet(overview);
@@ -41,7 +47,27 @@ export const generateExcelReport = (
   const dcsSheet: any[] = [header];
   const disSheet: any[] = [header];
   const winnersSummary = [
-    ["Position", "Scope", "Winner Name", "Total Votes", "Winning Percentage (%)"]
+    ["🏆 ELECTION WINNERS CIRCLE 🏆"],
+    ["Election Title", activeElection.title],
+    ["Report Generated", timestamp],
+    [],
+    ["Position", "Scope", "Winner Name", "Total Votes", "Winning Percentage (%)", "Status"],
+    ...results.flatMap(pos => {
+      const scope = pos.department === 'ALL' ? 'College-wide' : `${pos.department} Department`;
+      if (!pos.candidates || pos.candidates.length === 0) return [];
+
+      const winner = pos.candidates[0];
+      if (!winner || winner.totalVotes === 0) return [];
+
+      return [[
+        pos.positionName,
+        scope,
+        winner.name,
+        winner.totalVotes,
+        `${winner.percentage}%`,
+        "🏆 ELECTED"
+      ]];
+    })
   ];
 
   results.forEach(pos => {
@@ -73,13 +99,7 @@ export const generateExcelReport = (
       if (pos.department === 'DIS') disSheet.push(row);
 
       if (isWinner) {
-        winnersSummary.push([
-          pos.positionName,
-          scope,
-          c.name,
-          c.totalVotes,
-          `${c.percentage}%`
-        ]);
+        // Winners are now handled in the winnersSummary construction above
       }
     });
   });
@@ -96,14 +116,90 @@ export const generateExcelReport = (
     const range = XLSX.utils.decode_range(ws['!ref']);
 
     for (let R = 1; R <= range.e.r; ++R) {
-      const statusCell = XLSX.utils.encode_cell({ r: R, c: 6 }); 
+      const statusCell = XLSX.utils.encode_cell({ r: R, c: 6 });
       if (ws[statusCell] && ws[statusCell].v === "🏆 Winner") {
         for (let C = 0; C <= range.e.c; ++C) {
           const addr = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[addr]) continue;
           ws[addr].s = {
-            fill: { fgColor: { rgb: "C6EFCE" } }, 
+            fill: { fgColor: { rgb: "C6EFCE" } },
             font: { bold: true, color: { rgb: "006100" } }
+          };
+        }
+      }
+    }
+  };
+
+  const applyHeaderStyle = (ws: any, headerRowIndex: number = 0) => {
+    if (!ws['!ref']) return;
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let C = 0; C <= range.e.c; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
+      if (ws[addr]) {
+        ws[addr].s = {
+          font: { bold: true, sz: 12, color: { rgb: "2F318D" } },
+          fill: { fgColor: { rgb: "E8EAF6" } },
+          border: {
+            top: { style: "thin", color: { rgb: "2F318D" } },
+            bottom: { style: "thin", color: { rgb: "2F318D" } },
+            left: { style: "thin", color: { rgb: "2F318D" } },
+            right: { style: "thin", color: { rgb: "2F318D" } }
+          }
+        };
+      }
+    }
+  };
+
+  const applyOverviewStyle = (ws: any) => {
+    if (!ws['!ref']) return;
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let R = 0; R <= range.e.r; ++R) {
+      for (let C = 0; C <= range.e.c; ++C) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) continue;
+
+        const cellValue = ws[addr].v;
+        if (typeof cellValue === 'string' && cellValue.includes('ANALYTICS REPORT')) {
+          ws[addr].s = {
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "2F318D" } },
+            alignment: { horizontal: "center" }
+          };
+        } else if (typeof cellValue === 'string' && (
+          cellValue.includes('STATISTICS') ||
+          cellValue.includes('SUMMARY')
+        )) {
+          ws[addr].s = {
+            font: { bold: true, sz: 14, color: { rgb: "2F318D" } },
+            fill: { fgColor: { rgb: "F3E5F5" } }
+          };
+        }
+      }
+    }
+  };
+
+  const applyWinnersStyle = (ws: any) => {
+    if (!ws['!ref']) return;
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let R = 0; R <= range.e.r; ++R) {
+      for (let C = 0; C <= range.e.c; ++C) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) continue;
+
+        const cellValue = ws[addr].v;
+        if (typeof cellValue === 'string' && cellValue.includes('WINNERS CIRCLE')) {
+          ws[addr].s = {
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "FFD700" } },
+            alignment: { horizontal: "center" }
+          };
+        } else if (typeof cellValue === 'string' && cellValue.includes('🏆 ELECTED')) {
+          ws[addr].s = {
+            font: { bold: true, color: { rgb: "B8860B" } },
+            fill: { fgColor: { rgb: "FFF8DC" } }
           };
         }
       }
@@ -113,22 +209,48 @@ export const generateExcelReport = (
   applyWinnerStyle(wsPerformance);
   applyWinnerStyle(wsDCS);
   applyWinnerStyle(wsDIS);
+  applyHeaderStyle(wsPerformance, 0);
+  applyHeaderStyle(wsDCS, 0);
+  applyHeaderStyle(wsDIS, 0);
+  applyOverviewStyle(wsOverview);
+  applyWinnersStyle(wsWinners);
 
   const colWidths = [
-    { wch: 25 }, { wch: 20 }, { wch: 30 },
-    { wch: 12 }, { wch: 18 }, { wch: 10 }, { wch: 15 }
+    { wch: 25 }, // Position
+    { wch: 18 }, // Scope
+    { wch: 30 }, // Candidate/Winner Name
+    { wch: 12 }, // Votes
+    { wch: 20 }, // Percentage
+    { wch: 10 }, // Ranking
+    { wch: 15 }  // Status
   ];
 
-  [wsPerformance, wsDCS, wsDIS, wsWinners].forEach(ws => {
+  const overviewColWidths = [
+    { wch: 30 }, // Label
+    { wch: 40 }  // Value
+  ];
+
+  const winnersColWidths = [
+    { wch: 25 }, // Position
+    { wch: 18 }, // Scope
+    { wch: 30 }, // Winner Name
+    { wch: 12 }, // Total Votes
+    { wch: 20 }, // Winning Percentage
+    { wch: 15 }  // Status
+  ];
+
+  wsOverview['!cols'] = overviewColWidths;
+  wsWinners['!cols'] = winnersColWidths;
+  [wsPerformance, wsDCS, wsDIS].forEach(ws => {
     ws['!cols'] = colWidths;
   });
 
-  XLSX.utils.book_append_sheet(wb, wsOverview, "Overview");
-  XLSX.utils.book_append_sheet(wb, wsWinners, "Winners Circle");
-  XLSX.utils.book_append_sheet(wb, wsPerformance, "General Results");
-  XLSX.utils.book_append_sheet(wb, wsDCS, "DCS Dept");
-  XLSX.utils.book_append_sheet(wb, wsDIS, "DIS Dept");
+  XLSX.utils.book_append_sheet(wb, wsOverview, "📊 Election Overview");
+  XLSX.utils.book_append_sheet(wb, wsWinners, "🏆 Winners Circle");
+  XLSX.utils.book_append_sheet(wb, wsPerformance, "📈 Complete Results");
+  XLSX.utils.book_append_sheet(wb, wsDCS, "🎓 DCS Department");
+  XLSX.utils.book_append_sheet(wb, wsDIS, "🎓 DIS Department");
 
-  const fileName = `MSU_CICS_${activeElection.title.replace(/\s+/g, '_')}_Analytics_Report.xlsx`;
+  const fileName = `MSU_CICS_Election_${activeElection.title.replace(/[^a-zA-Z0-9]/g, '_')}_Analytics_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, fileName);
 };
