@@ -20,55 +20,51 @@ export const castBallot = async (req, res) => {
     const session = await mongoose.startSession();
     try {
         session.startTransaction();
-        const { electionId, votes } = req.body;
+        const { electionId, votes } = req.body; 
         const userId = req.user.id;
 
         const user = await User.findById(userId).session(session);
         const election = await Election.findById(electionId).session(session);
 
-        if (!user || !election?.isActive) {
-            throw new Error("Invalid election or user.");
-        }
-
-        if (user.votedElections.includes(electionId)) {
-            throw new Error("Already voted.");
-        }
+        if (!user || !election?.isActive) throw new Error("Invalid election or user.");
+        if (user.votedElections.includes(electionId)) throw new Error("Already voted.");
 
         const ballotEntries = [];
-        
-        for (const vote of votes) {
-            if (!vote.candidateIds || vote.candidateIds.length === 0) continue;
+        const selectedCandidateIds = []; 
 
-            const position = await Position.findById(vote.positionId).session(session);
-            if (!position) throw new Error(`Position ${vote.positionId} not found.`);
-
-            if (vote.candidateIds.length > (position.maxVote || 1)) {
-                throw new Error(`Exceeded maximum votes for ${position.name}.`);
-            }
-            vote.candidateIds.forEach(cId => {
-                ballotEntries.push({
-                    position: vote.positionId,
-                    candidate: cId
-                });
+        votes.forEach(v => {
+            v.candidateIds.forEach(cId => {
+                ballotEntries.push({ position: v.positionId, candidate: cId });
+                selectedCandidateIds.push(cId);
             });
-        }
+        });
 
-    
-        user.votedElections.push(electionId);
-        await user.save({ session });
-
-        const ballot = await Ballot.create([{
+        await Ballot.create([{
             voter: userId,
             election: electionId,
             votes: ballotEntries,
             submitted: true
         }], { session });
 
+        user.votedElections.push(electionId);
+        await user.save({ session });
+
         await session.commitTransaction();
-        res.status(201).json({ message: "Ballot cast successfully", ballotId: ballot[0]._id });
         
+        res.status(201).json({ message: "Ballot cast successfully" });
+
+        const voterChoices = await Candidate.find({ _id: { $in: selectedCandidateIds } })
+            .populate('position', 'name')
+            .lean();
+
+        const emailVoteSummary = voterChoices.map(c => ({
+            positionName: c.position?.name || "Position",
+            candidateName: c.name
+        }));
+
         req.app.get('io')?.emit('newVoteCast', { electionId });
-        sendVoteEmail(user.email, user.name, election.title, []).catch(console.error);
+
+        sendVoteEmail(user.email, user.name, election.title, emailVoteSummary).catch(console.error);
 
     } catch (error) {
         if (session.inTransaction()) await session.abortTransaction();

@@ -109,24 +109,17 @@ export const updateCandidate = async (req, res) => {
 
 export const removeCandidate = async (req, res) => {
     try {
-        // 1. Find and delete the candidate in one go
         const deletedCandidate = await Candidate.findByIdAndDelete(req.params.id);
 
-        // 2. If no candidate was found, exit early
         if (!deletedCandidate) {
             return res.status(404).json({ error: "Candidate not found" });
         }
-
-        // 3. Clean up the image file from the server
-        // Fixed: changed 'candidate' to 'deletedCandidate'
         if (deletedCandidate.profilePicture) {
             try {
                 if (fs.existsSync(deletedCandidate.profilePicture)) {
                     fs.unlinkSync(deletedCandidate.profilePicture);
                 }
             } catch (fileError) {
-                // We log the error but don't stop the response 
-                // since the DB record is already gone.
                 console.error("Failed to delete image file:", fileError);
             }
         }

@@ -20,7 +20,8 @@ const electionSchema = new mongoose.Schema({
   isLocked: {
     type: Boolean,
     default: true
-  }
+  },
+  
 }, { timestamps: true });
 
 export default mongoose.model("Election", electionSchema);
