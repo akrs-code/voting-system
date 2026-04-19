@@ -221,7 +221,7 @@ const Positions = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-md bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
+          <div className="w-full max-w-lg bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
             <button onClick={() => setShowModal(false)} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600">
               <X size={20} />
             </button>
@@ -267,7 +267,7 @@ const Positions = () => {
               {({ isSubmitting, errors, touched }) => (
                 <Form className="space-y-4 md:space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-xs md:text-sm font-semibold text-slate-700">Position Name</label>
+                    <label className="text-xs md:text-sm font-semibold text-slate-700">Position Title</label>
                     <Field name="name" placeholder="e.g. Prime Minister" className={`h-12 md:h-14 w-full border px-4 md:px-5 rounded-2xl outline-none transition-all text-sm ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
                     <ErrorMessage name="name" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                   </div>

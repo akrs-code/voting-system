@@ -19,12 +19,15 @@ const Applications = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
+  const [yearFilter, setYearFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const [selectedApp, setSelectedApp] = useState<User | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const ordinals = ["", "1st", "2nd", "3rd", "4th"];
 
   const fetchApplications = async () => {
     try {
@@ -72,9 +75,10 @@ const Applications = () => {
       const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.studentId.includes(searchQuery);
       const matchesDept = deptFilter === 'ALL' ? true : app.department === deptFilter;
-      return matchesSearch && matchesDept;
+      const matchesYear = yearFilter === 'all' ? true : app.yearLevel === parseInt(yearFilter);
+      return matchesSearch && matchesDept && matchesYear;
     });
-  }, [applications, searchQuery, deptFilter]);
+  }, [applications, searchQuery, deptFilter, yearFilter]);
 
   const totalPages = Math.max(Math.ceil(filteredApps.length / itemsPerPage), 1);
   const currentApps = useMemo(() => {
@@ -98,8 +102,8 @@ const Applications = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative group sm:col-span-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="relative group sm:col-span-2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
@@ -120,6 +124,22 @@ const Applications = () => {
             <option value="ALL">ALL Departments</option>
             <option value="DIS">DIS Department</option>
             <option value="DCS">DCS Department</option>
+          </select>
+        </div>
+
+        <div className="relative">
+          <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <select
+            value={yearFilter}
+            onChange={(e) => setYearFilter(e.target.value)}
+            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+          >
+            <option value="all">All Year Levels</option>
+            {[1, 2, 3, 4].map(lvl => (
+              <option key={lvl} value={lvl}>
+                {ordinals[lvl]} Year
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -162,7 +182,7 @@ const Applications = () => {
                             {app.department}
                           </span>
                           <span className="text-slate-400 text-[11px] font-semibold">
-                            {app.yearLevel ? `Year ${app.yearLevel}` : 'Pending Level'}
+                            {app.yearLevel ? `${ordinals[app.yearLevel]} Year` : 'Pending Level'}
                           </span>
                         </div>
                       </td>
@@ -245,7 +265,7 @@ const Applications = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-[#2f318d] uppercase tracking-widest opacity-60 mb-1">Year Level</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedApp.yearLevel} Year</span>
+                    <span className="text-sm font-bold text-slate-800">{ordinals[selectedApp.yearLevel]} Year</span>
                   </div>
                 </div>
               </div>

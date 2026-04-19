@@ -271,7 +271,7 @@ const Voters = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-md bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
+          <div className="w-full max-w-lg bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
             <button onClick={() => setShowModal(false)} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600">
               <X size={20} />
             </button>
@@ -323,7 +323,7 @@ const Voters = () => {
                     <ErrorMessage name="studentId" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs md:text-sm font-semibold text-slate-700">Email</label>
+                    <label className="text-xs md:text-sm font-semibold text-slate-700">Institutional Email</label>
                     <Field
                       name="email"
                       type="email"
@@ -350,10 +350,10 @@ const Voters = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs md:text-sm font-semibold text-slate-700">Dept</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Deparment</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="DIS">DIS</option>
-                        <option value="DCS">DCS</option>
+                        <option value="DIS">DIS Department</option>
+                        <option value="DCS">DCS Department</option>
                       </Field>
                     </div>
                     <div className="space-y-1.5">

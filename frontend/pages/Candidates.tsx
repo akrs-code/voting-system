@@ -268,7 +268,7 @@ const Candidates = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-2xl bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
+          <div className="w-full max-w-lg bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl p-6 md:p-10 relative max-h-[95vh] overflow-y-auto">
             <button onClick={closeModal} className="absolute right-6 top-6 md:right-8 md:top-8 text-slate-400 hover:text-slate-600">
               <X size={20} />
             </button>
@@ -339,19 +339,19 @@ const Candidates = () => {
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Full Identity</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Full Name</label>
                       <Field name="name" placeholder="John B. Doe" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.name && touched.name ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
                       <ErrorMessage name="name" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Partylist / Alliance</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Partylist</label>
                       <Field name="partylist" placeholder="Independent" className={`h-12 md:h-14 w-full border px-5 rounded-2xl outline-none transition-all text-sm font-medium ${errors.partylist && touched.partylist ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-[#2f318d]'}`} />
                       <ErrorMessage name="partylist" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Election Cycle</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Election Cycle</label>
                       <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
                         <option value="">Choose Election Cycle...</option>
                         {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
@@ -359,7 +359,7 @@ const Candidates = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Department Scope</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Department Scope</label>
                       <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
                         <option value="ALL">ALL Department</option>
                         <option value="DIS">DIS Department</option>
@@ -368,7 +368,7 @@ const Candidates = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Target Position</label>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Position Title</label>
                       <Field as="select" name="position" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
                         <option value="">
                           {!values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position..."}
