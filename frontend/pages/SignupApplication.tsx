@@ -24,6 +24,9 @@ export default function SignupApplication() {
       .required("Institutional email is required"),
     yearLevel: Yup.number().oneOf([1, 2, 3, 4], "Please select a year level").required("Required"),
     password: Yup.string().min(6, "Password must be at least 6 characters").required("Required"),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password')], 'Passwords must match')
+      .required('Confirm password is required'),
   });
 
   if (isSuccess) {
@@ -47,19 +50,21 @@ export default function SignupApplication() {
   return (
     <div className="relative flex min-h-screen w-full font-poppins items-center justify-center p-4 bg-[radial-gradient(at_0%_0%,rgba(99,102,241,0.12),transparent_60%),radial-gradient(at_100%_100%,rgba(99,102,241,0.10),transparent_65%)] bg-slate-50">
       <Formik
-        initialValues={{ 
-          name: "", 
-          studentId: "", 
-          password: "", 
-          email: "", 
-          yearLevel: "" as unknown as number, 
-          department: dept 
+        initialValues={{
+          name: "",
+          studentId: "",
+          password: "",
+          confirmPassword: "",
+          email: "",
+          yearLevel: "" as unknown as number,
+          department: dept
         }}
         validationSchema={validationSchema}
         onSubmit={async (values, { setSubmitting, setStatus }) => {
           setStatus(null);
           try {
-            await authService.submitApplication(values as Partial<User>);
+            const { confirmPassword, ...signupData } = values;
+            await authService.submitApplication(signupData as Partial<User>);
             setIsSuccess(true);
           } catch (err: any) {
             setStatus(err.response?.data?.error || "Submission failed. Please try again.");
@@ -157,27 +162,45 @@ export default function SignupApplication() {
               </div>
             </div>
 
-            <div className="space-y-2 mb-8">
-              <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
-              <div className="relative">
-                <input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={values.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`h-12 w-full border px-5 pr-12 text-sm rounded-xl transition-all duration-200 outline-none font-medium ${errors.password && touched.password ? "border-red-300 bg-red-50/30 ring-4 ring-red-50" : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#2f318d] transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+              <div className="space-y-2 mb-8">
+                <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
+                <div className="relative">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={values.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`h-12 w-full border px-5 pr-12 text-sm rounded-xl transition-all duration-200 outline-none font-medium ${errors.password && touched.password ? "border-red-300 bg-red-50/30 ring-4 ring-red-50" : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#2f318d] transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <ErrorMessage name="password" component="p" className="text-[10px] text-red-500 font-medium ml-1" />
               </div>
-              <ErrorMessage name="password" component="p" className="text-[10px] text-red-500 font-medium ml-1" />
+
+              <div className="space-y-2 mb-8">
+                <label className="text-sm font-semibold text-slate-700 ml-1">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    name="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={values.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`h-12 w-full border px-5 pr-12 text-sm rounded-xl transition-all duration-200 outline-none font-medium ${errors.confirmPassword && touched.confirmPassword ? "border-red-300 bg-red-50/30 ring-4 ring-red-50" : "border-slate-200 bg-slate-50/50 focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50"}`}
+                  />
+                </div>
+                <ErrorMessage name="confirmPassword" component="p" className="text-[10px] text-red-500 font-medium ml-1" />
+              </div>
             </div>
 
             {status && (
