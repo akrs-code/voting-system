@@ -23,7 +23,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
+
         <Route
           path="/login"
           element={
@@ -34,11 +34,11 @@ function App() {
             )
           }
         />
-        
+
         <Route path="/applications/dis" element={<SignupApplication />} />
         <Route path="/applications/dcs" element={<SignupApplication />} />
 
-      
+
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route element={<AdminLayout />}>
             <Route path="/dashboard/admin" element={<Dashboard />} />
@@ -56,8 +56,8 @@ function App() {
           </Route>
         </Route>
 
-        <Route path="/unauthorized" element={<div>Unauthorized</div>} />
-        <Route path="*" element={<div>404 Not Found</div>} />
+        <Route path="/unauthorized" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Analytics />
     </BrowserRouter>
