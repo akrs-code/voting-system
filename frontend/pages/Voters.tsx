@@ -304,7 +304,8 @@ const Voters = () => {
                   setShowModal(false);
                   await fetchVoters();
                 } catch (err: any) {
-                  alert(err.response?.data?.error || "Transaction failed");
+                  const serverMessage = err.response?.data?.message || err.response?.data?.error || "Student record update failed. Please try again.";
+                  alert(serverMessage);
                 } finally {
                   setSubmitting(false);
                 }

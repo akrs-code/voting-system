@@ -185,16 +185,16 @@ const Positions = () => {
                         <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
                           {pos.department}
                         </span>
-                        
+
                         <span className="text-slate-400 text-[11px] font-semibold">
                           {pos.yearLevel ? `Year ${pos.yearLevel}` : 'All Levels'}
                         </span>
                       </div>
                     </td>
-                    
+
                     <td className="px-6 md:px-10 py-4 text-center">
                       <div className="flex justify-center gap-2 items-center">
-                       
+
                         <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-[#2f318d]-50 rounded-md border border-[#2f318d]-100 uppercase">
                           Max: {pos.maxVote || 0}
                         </span>

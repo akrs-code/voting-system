@@ -317,7 +317,6 @@ const Candidates = () => {
               {({ isSubmitting, errors, touched, values }) => (
                 <Form className="space-y-6">
                   <FormWatcher onFilterChange={handleModalFilterChange} />
-                  
                   <div className="flex justify-center mb-6">
                     <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                       <div className="w-32 h-32 md:w-36 md:h-36 rounded-4xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#2f318d] group-hover:bg-indigo-50/30">

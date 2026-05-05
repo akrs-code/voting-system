@@ -58,7 +58,7 @@ const Applications = () => {
       setApplications(prev => prev.filter(app => app._id !== id));
       setShowViewModal(false);
     } catch (error: any) {
-      const serverMessage = error.response?.data?.error || "Action failed. Please try again.";
+      const serverMessage = error.response?.data?.message || error.response?.data?.error || "Application processing failed. Please try again.";
       alert(serverMessage);
     } finally {
       setIsProcessing(false);

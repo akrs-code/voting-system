@@ -161,8 +161,8 @@ const Elections = () => {
                           disabled={processingId === election._id}
                           onClick={() => handleToggleLock(election._id, election.isLocked)}
                           className={`p-2 rounded-xl transition-all ${election.isLocked
-                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                             } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title={election.isLocked ? "Unlock Election" : "Lock Election"}
                         >
