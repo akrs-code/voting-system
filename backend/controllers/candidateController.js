@@ -7,17 +7,17 @@ export const addCandidate = async (req, res) => {
         const profilePicture = req.file ? req.file.path : "";
 
         if (!name || !position || !electionId) {
-            return res.status(400).json({ error: "Name, position, and electionId are required." });
+            return res.status(400).json({ message: "Missing required information. Please provide the candidate's name, position, and election cycle." });
         }
 
         const existingPosition = await Position.findById(position).lean();
         if (!existingPosition) {
-            return res.status(404).json({ error: "The selected position does not exist." });
+            return res.status(404).json({ message: "The selected electoral position does not exist in our records." });
         }
 
         if (existingPosition.election.toString() !== electionId) {
             return res.status(400).json({
-                error: "Position/Election mismatch. This position does not belong to the selected election."
+                message: "Configuration Error: The chosen position is not compatible with the selected election cycle."
             });
         }
 
@@ -42,7 +42,7 @@ export const addCandidate = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "An error occurred while adding the candidate. " + error.message });
     }
 };
 
@@ -69,7 +69,7 @@ export const getCandidatesByDepartment = async (req, res) => {
 
         res.status(200).json(candidates);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Failed to retrieve the candidate list. " + error.message });
     }
 };
 
@@ -81,7 +81,7 @@ export const updateCandidate = async (req, res) => {
         const finalUpdate = { ...updateData };
 
         if (electionId) finalUpdate.election = electionId;
-         if (position) {
+        if (position) {
             finalUpdate.position = position;
             const pos = await Position.findById(position).lean();
             if (pos) finalUpdate.department = pos.department;
@@ -98,12 +98,12 @@ export const updateCandidate = async (req, res) => {
             .lean();
 
         if (!updatedCandidate) {
-            return res.status(404).json({ error: "Candidate not found" });
+            return res.status(404).json({ message: "We couldn't find the candidate profile you're trying to update." });
         }
 
         res.json({ message: "Candidate updated successfully", updatedCandidate });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Failed to update the candidate profile. " + error.message });
     }
 };
 
@@ -112,7 +112,7 @@ export const removeCandidate = async (req, res) => {
         const deletedCandidate = await Candidate.findByIdAndDelete(req.params.id);
 
         if (!deletedCandidate) {
-            return res.status(404).json({ error: "Candidate not found" });
+            return res.status(404).json({ message: "The candidate profile you are trying to remove does not exist." });
         }
         if (deletedCandidate.profilePicture) {
             try {
@@ -126,6 +126,6 @@ export const removeCandidate = async (req, res) => {
 
         res.json({ message: "Candidate and associated data removed successfully" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Error removing candidate from registry: " + error.message });
     }
 };

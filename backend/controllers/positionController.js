@@ -7,7 +7,7 @@ export const createPosition = async (req, res) => {
         const { name, maxVote, department, yearLevel, election } = req.body;
 
         if (!election) {
-            return res.status(400).json({ error: "electionId is required" });
+            return res.status(400).json({ message: "The Election ID is required to create a position." });
         }
 
         const position = await Position.create({
@@ -20,7 +20,7 @@ export const createPosition = async (req, res) => {
 
         res.status(201).json(position);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Failed to create the new position. " + error.message });
     }
 };
 
@@ -54,16 +54,16 @@ export const getPositionsByDepartment = async (req, res) => {
 
         res.status(200).json(positions);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Unable to retrieve the positions list. " + error.message });
     }
 };
 
 export const getVotingForm = async (req, res) => {
     try {
-        const { department, yearLevel } = req.user; 
+        const { department, yearLevel } = req.user;
         const activeElection = await Election.findOne({ isActive: true }).lean();
-        
-        if (!activeElection) return res.status(404).json({ error: "No active election" });
+
+        if (!activeElection) return res.status(404).json({ message: "No active election found. Voting form cannot be generated." });
 
         const positions = await Position.find({
             election: activeElection._id,
@@ -71,8 +71,8 @@ export const getVotingForm = async (req, res) => {
             yearLevel: { $in: [yearLevel, null] }
         }).lean();
 
-        const allCandidates = await Candidate.find({ 
-            position: { $in: positions.map(p => p._id) } 
+        const allCandidates = await Candidate.find({
+            position: { $in: positions.map(p => p._id) }
         }).lean();
 
         const form = positions.map(pos => ({
@@ -82,7 +82,7 @@ export const getVotingForm = async (req, res) => {
 
         res.status(200).json({ election: activeElection, form });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Could not load the official voting form. " + error.message });
     }
 };
 
@@ -96,12 +96,12 @@ export const updatePosition = async (req, res) => {
         ).lean();
 
         if (!updatedPosition) {
-            return res.status(404).json({ error: "Position not found" });
+            return res.status(404).json({ message: "Position not found. It may have been already deleted." });
         }
 
         res.status(200).json(updatedPosition);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Failed to update the position details. " + error.message });
     }
 };
 
@@ -112,13 +112,13 @@ export const deletePosition = async (req, res) => {
         const position = await Position.findByIdAndDelete(id);
 
         if (!position) {
-            return res.status(404).json({ error: "Position not found" });
+            return res.status(404).json({ message: "Position not found. It may have been already removed." });
         }
 
         await Candidate.deleteMany({ position: id });
 
         res.status(200).json({ message: "Position and associated candidates deleted" });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "An error occurred while deleting the position. " + error.message });
     }
 };

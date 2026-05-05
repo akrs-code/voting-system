@@ -12,7 +12,7 @@ export const getActiveElection = async (req, res) => {
         if (!election) return res.status(200).json(null);
         res.json(election);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Unable to retrieve the active election cycle. " + error.message });
     }
 };
 
@@ -20,17 +20,17 @@ export const castBallot = async (req, res) => {
     const session = await mongoose.startSession();
     try {
         session.startTransaction();
-        const { electionId, votes } = req.body; 
+        const { electionId, votes } = req.body;
         const userId = req.user.id;
 
         const user = await User.findById(userId).session(session);
         const election = await Election.findById(electionId).session(session);
 
-        if (!user || !election?.isActive) throw new Error("Invalid election or user.");
-        if (user.votedElections.includes(electionId)) throw new Error("Already voted.");
+        if (!user || !election?.isActive) throw new Error("The election is either closed or you are not authorized to vote.");
+        if (user.votedElections.includes(electionId)) throw new Error("You have already cast your vote in this election cycle.");
 
         const ballotEntries = [];
-        const selectedCandidateIds = []; 
+        const selectedCandidateIds = [];
 
         votes.forEach(v => {
             v.candidateIds.forEach(cId => {
@@ -50,7 +50,7 @@ export const castBallot = async (req, res) => {
         await user.save({ session });
 
         await session.commitTransaction();
-        
+
         res.status(201).json({ message: "Ballot cast successfully" });
 
         const voterChoices = await Candidate.find({ _id: { $in: selectedCandidateIds } })
@@ -68,7 +68,7 @@ export const castBallot = async (req, res) => {
 
     } catch (error) {
         if (session.inTransaction()) await session.abortTransaction();
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ message: "Ballot submission failed: " + error.message });
     } finally {
         session.endSession();
     }
@@ -96,7 +96,7 @@ export const getElectionResultsByPosition = async (req, res) => {
 
         const resultsByPosition = positions.map(pos => {
             const posCandidates = candidates.filter(c => c.position.toString() === pos._id.toString());
-            
+
             const candidatesWithVotes = posCandidates.map(cand => {
                 const voteData = voteCounts.find(v => v._id.toString() === cand._id.toString());
                 return {
@@ -126,7 +126,7 @@ export const getElectionResultsByPosition = async (req, res) => {
 
         res.json(resultsByPosition);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Failed to compile the election results per position. " + error.message });
     }
 };
 
@@ -149,13 +149,13 @@ export const getElectionStats = async (req, res) => {
             User.countDocuments({ ...userFilter, votedElections: electionId })
         ]);
 
-        const turnoutPercentage = totalVoters > 0 
-            ? ((votedCount / totalVoters) * 100).toFixed(2) 
+        const turnoutPercentage = totalVoters > 0
+            ? ((votedCount / totalVoters) * 100).toFixed(2)
             : "0.00";
 
         res.json({ totalVoters, votedCount, totalCandidates, turnoutPercentage });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Error calculating turnout and candidate statistics. " + error.message });
     }
 };
 
@@ -166,7 +166,7 @@ export const getBallot = async (req, res) => {
         const { department: userDept, yearLevel: userYear } = req.user;
 
         const [positions, candidates] = await Promise.all([
-            Position.find({ 
+            Position.find({
                 election: eId,
                 department: { $in: [userDept, "ALL"] },
                 $or: [{ yearLevel: userYear }, { yearLevel: null }]
@@ -175,7 +175,7 @@ export const getBallot = async (req, res) => {
         ]);
 
         const ballotData = positions.map(pos => {
-            const posCandidates = candidates.filter(cand => 
+            const posCandidates = candidates.filter(cand =>
                 cand.position.toString() === pos._id.toString() &&
                 (cand.department === "ALL" || cand.department === userDept)
             );
@@ -197,6 +197,6 @@ export const getBallot = async (req, res) => {
 
         res.json(ballotData);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: "Could not generate your personalized voting ballot. " + error.message });
     }
 };
