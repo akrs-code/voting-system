@@ -26,7 +26,6 @@ export const useAuth = () => {
 
   return {
     user: context.user,
-    token: context.token,
     loading: context.loading,
     isAdmin: context.user?.role === "admin",
     login,

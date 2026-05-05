@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { Server } from 'socket.io';
 import compression from 'compression';
 import authRoutes from './routes/authRoutes.js';
@@ -40,6 +41,7 @@ app.use(helmet({
 }));
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cookieParser());
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

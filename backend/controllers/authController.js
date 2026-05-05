@@ -19,8 +19,8 @@ export const login = async (req, res) => {
         }
 
         if (user.role === "voter" && user.isVerified === "pending") {
-            return res.status(403).json({ 
-                message: "Your account is still pending admin approval. Please wait or visit the BYTES office." 
+            return res.status(403).json({
+                message: "Your account is still pending admin approval. Please wait or visit the BYTES office."
             });
         }
 
@@ -36,8 +36,14 @@ export const login = async (req, res) => {
             { expiresIn: "2h" }
         );
 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Lax",
+            maxAge: 2 * 60 * 60 * 1000,
+        });
+
         res.json({
-            token,
             user: {
                 _id: user._id,
                 studentId: user.studentId,
@@ -79,7 +85,7 @@ export const signup = async (req, res) => {
             yearLevel,
             email,
             role: role || "voter",
-            isVerified: "approved" 
+            isVerified: "approved"
         });
 
         res.status(201).json({
@@ -127,7 +133,7 @@ export const updateUser = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({ role: "voter", isVerified: "approved" }) 
+        const users = await User.find({ role: "voter", isVerified: "approved" })
             .select("-password")
             .sort({ name: 1 });
 
@@ -227,15 +233,15 @@ export const submitApplication = async (req, res) => {
         const normalizedId = studentId.trim();
         const normalizedEmail = email.trim().toLowerCase();
 
-        const existingUser = await User.findOne({ 
-            $or: [{ studentId: normalizedId }, { email: normalizedEmail }] 
+        const existingUser = await User.findOne({
+            $or: [{ studentId: normalizedId }, { email: normalizedEmail }]
         });
 
         if (existingUser) {
             const isIdDup = existingUser.studentId === normalizedId;
-            return res.status(409).json({ 
-                message: isIdDup 
-                    ? `Institutional ID ${normalizedId} is already registered.` 
+            return res.status(409).json({
+                message: isIdDup
+                    ? `Institutional ID ${normalizedId} is already registered.`
                     : `The email address ${normalizedEmail} is already in use.`
             });
         }
@@ -265,8 +271,8 @@ export const submitApplication = async (req, res) => {
 export const manageApplication = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body; 
-        
+        const { status } = req.body;
+
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({ message: "The specified application could not be found." });
@@ -281,10 +287,10 @@ export const manageApplication = async (req, res) => {
             } catch (emailErr) {
                 console.error("Email message:", emailErr);
             }
-            
+
             return res.json({ message: "User approved and notified." });
-        } 
-        
+        }
+
         if (status === "rejected") {
             const { email, name } = user;
 
@@ -295,7 +301,7 @@ export const manageApplication = async (req, res) => {
             } catch (emailErr) {
                 console.error("Email message:", emailErr);
             }
-            
+
             return res.json({ message: "Application rejected and user notified." });
         }
 
@@ -307,9 +313,9 @@ export const manageApplication = async (req, res) => {
 
 export const getPendingApplications = async (req, res) => {
     try {
-        const applications = await User.find({ 
-            role: "voter", 
-            isVerified: "pending" 
+        const applications = await User.find({
+            role: "voter",
+            isVerified: "pending"
         }).select("-password").sort({ createdAt: -1 });
 
         res.json(applications);
@@ -317,3 +323,20 @@ export const getPendingApplications = async (req, res) => {
         res.status(500).json({ message: "Failed to load pending applications." });
     }
 };
+
+export const logout = async (req, res) => {
+    res.clearCookie("token");
+    res.json({ message: "Logged out successfully" });
+};
+
+export const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ user });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+};

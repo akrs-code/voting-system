@@ -29,5 +29,9 @@ export const authService = {
   manageApplication: async (id: string, action: 'approved' | 'rejected') => {
     const response = await API.patch(`/auth/applications/${id}`, { status: action });
     return response.data;
-  }
-};
+  },
+  getMe: async (): Promise<{ user: User }> => {
+    const response = await API.get<{ user: User }>("/auth/me");
+    return response.data;
+  },
+};

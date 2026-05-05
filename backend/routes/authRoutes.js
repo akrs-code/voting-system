@@ -1,10 +1,10 @@
 import express from "express"
 import { verifyToken } from '../middleware/verifyToken.js';
 import { authorizeRole } from '../middleware/authorizeRole.js';
-import { 
-    bulkSignup, deleteUser, login, updateUser, 
-    getAllUsers, submitApplication, manageApplication, 
-    signup, getPendingApplications 
+import {
+    bulkSignup, deleteUser, login, updateUser,
+    getAllUsers, submitApplication, manageApplication,
+    signup, getPendingApplications, logout, getMe
 } from "../controllers/authController.js";
 
 import { limiter } from "../middleware/rateLimiter.js";
@@ -12,7 +12,9 @@ import { limiter } from "../middleware/rateLimiter.js";
 const router = express.Router();
 
 router.post("/login", limiter, login);
+router.post("/logout", logout);
 router.post("/applications", limiter, submitApplication);
+router.get("/me", verifyToken, getMe);
 
 router.use(verifyToken, authorizeRole("admin"));
 
