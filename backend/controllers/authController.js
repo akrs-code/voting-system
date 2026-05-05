@@ -8,14 +8,14 @@ export const login = async (req, res) => {
         const { studentId, password } = req.body;
 
         if (!studentId || !password) {
-            return res.status(400).json({ message: "Student ID and password are required" });
+            return res.status(400).json({ message: "Please provide both your Student ID and password to log in." });
         }
 
         const normalizedId = studentId.trim();
         const user = await User.findOne({ studentId: normalizedId });
 
         if (!user) {
-            return res.status(401).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials. Please double-check your Student ID and password." });
         }
 
         if (user.role === "voter" && user.isVerified === "pending") {
@@ -27,7 +27,7 @@ export const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials. Please double-check your Student ID and password." });
         }
 
         const token = jwt.sign(
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({ message: "Server error during login" });
+        res.status(500).json({ message: "An unexpected server error occurred during login. Please try again later." });
     }
 };
 
@@ -59,14 +59,14 @@ export const signup = async (req, res) => {
         const { name, studentId, password, department, yearLevel, email, role } = req.body;
 
         if (!name || !studentId || !password || !department || !yearLevel || !email) {
-            return res.status(400).json({ message: "All required fields must be filled" });
+            return res.status(400).json({ message: "Registration failed. All fields (Name, ID, Password, Department, Year, and Email) are required." });
         }
 
         const normalizedId = studentId.trim();
         const existingUser = await User.findOne({ studentId: normalizedId });
 
         if (existingUser) {
-            return res.status(400).json({ message: "User with this Student ID already exists" });
+            return res.status(400).json({ message: `An account with Student ID ${normalizedId} already exists.` });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,7 +87,7 @@ export const signup = async (req, res) => {
             studentId: newUser.studentId
         });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Account creation failed: " + error.message });
     }
 };
 
@@ -97,13 +97,13 @@ export const updateUser = async (req, res) => {
         const { name, studentId, password, department, yearLevel, role, email } = req.body;
 
         const user = await User.findById(id);
-        if (!user) return res.status(404).json({ message: "User not found" });
+        if (!user) return res.status(404).json({ message: "User account not found." });
 
         if (studentId) {
             const normalizedId = studentId.trim()
             if (normalizedId !== user.studentId) {
                 const existingUser = await User.findOne({ studentId: normalizedId });
-                if (existingUser) return res.status(400).json({ message: "New Student ID already in use" });
+                if (existingUser) return res.status(400).json({ message: `Student ID ${normalizedId} is already assigned to another user.` });
                 user.studentId = normalizedId;
             }
         }
@@ -121,7 +121,7 @@ export const updateUser = async (req, res) => {
         await user.save();
         res.json({ message: "User updated successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Failed to update user" });
+        res.status(500).json({ message: "Failed to update user profile. " + error.message });
     }
 };
 
@@ -141,7 +141,7 @@ export const getAllUsers = async (req, res) => {
 
         res.json(usersWithStatus);
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch users" });
+        res.status(500).json({ message: "Unable to retrieve user list. Please check your connection." });
     }
 };
 
@@ -149,10 +149,10 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const deletedUser = await User.findByIdAndDelete(id);
-        if (!deletedUser) return res.status(404).json({ message: "User not found" });
+        if (!deletedUser) return res.status(404).json({ message: "The user account you are trying to delete does not exist." });
         res.json({ message: "User deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Failed to delete user" });
+        res.status(500).json({ message: "Error deleting user account: " + error.message });
     }
 };
 
@@ -212,7 +212,7 @@ export const bulkSignup = async (req, res) => {
             skippedDetails: skipped
         });
     } catch (error) {
-        res.status(500).json({ message: "Bulk signup failed", details: error.message });
+        res.status(500).json({ message: "Bulk registration process encountered an error.", details: error.message });
     }
 };
 
@@ -235,8 +235,8 @@ export const submitApplication = async (req, res) => {
             const isIdDup = existingUser.studentId === normalizedId;
             return res.status(409).json({ 
                 message: isIdDup 
-                    ? `Student ID ${normalizedId} is already registered.` 
-                    : "This email address is already in use."
+                    ? `Institutional ID ${normalizedId} is already registered.` 
+                    : `The email address ${normalizedEmail} is already in use.`
             });
         }
 
@@ -256,9 +256,9 @@ export const submitApplication = async (req, res) => {
         res.status(201).json({ message: "Application submitted successfully." });
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ message: "Duplicate registration data detected." });
+            return res.status(409).json({ message: "A user with this ID or email is already registered." });
         }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Application submission failed due to a server error. Please try again." });
     }
 };
 
@@ -269,7 +269,7 @@ export const manageApplication = async (req, res) => {
         
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ message: "Application not found" });
+            return res.status(404).json({ message: "The specified application could not be found." });
         }
 
         if (status === "approved") {
@@ -301,7 +301,7 @@ export const manageApplication = async (req, res) => {
 
         res.status(400).json({ message: "Invalid status" });
     } catch (error) {
-        res.status(500).json({ message: "Management action failed" });
+        res.status(500).json({ message: "An error occurred while processing the application status." });
     }
 };
 
@@ -310,10 +310,10 @@ export const getPendingApplications = async (req, res) => {
         const applications = await User.find({ 
             role: "voter", 
             isVerified: "pending" 
-        }).sort({ createdAt: -1 });
+        }).select("-password").sort({ createdAt: -1 });
 
         res.json(applications);
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch pending applications" });
+        res.status(500).json({ message: "Failed to load pending applications." });
     }
 };

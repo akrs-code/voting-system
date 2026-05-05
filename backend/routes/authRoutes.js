@@ -7,10 +7,12 @@ import {
     signup, getPendingApplications 
 } from "../controllers/authController.js";
 
+import { limiter } from "../middleware/rateLimiter.js";
+
 const router = express.Router();
 
-router.post("/login", login);
-router.post("/applications", submitApplication);
+router.post("/login", limiter, login);
+router.post("/applications", limiter, submitApplication);
 
 router.use(verifyToken, authorizeRole("admin"));
 
