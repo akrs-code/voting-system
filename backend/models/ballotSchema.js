@@ -23,7 +23,7 @@ const ballotSchema = new mongoose.Schema({
         ref: "Election",
         required: true,
     },
-    votes: [voteSchema], 
+    votes: [voteSchema],
     submitted: {
         type: Boolean,
         default: false,

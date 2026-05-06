@@ -80,7 +80,7 @@ export const generateExcelReport = (
     }
 
     pos.candidates.forEach((c: any, index: number) => {
-  
+
       const isWinner = index === 0 && c.totalVotes > 0;
 
       const row = [
@@ -94,23 +94,22 @@ export const generateExcelReport = (
       ];
 
       allPerformance.push(row);
-    
+
       if (pos.department === 'DCS') dcsSheet.push(row);
       if (pos.department === 'DIS') disSheet.push(row);
 
       if (isWinner) {
-        // Winners are now handled in the winnersSummary construction above
       }
     });
   });
 
- 
+
   const wsPerformance = XLSX.utils.aoa_to_sheet(allPerformance);
   const wsDCS = XLSX.utils.aoa_to_sheet(dcsSheet);
   const wsDIS = XLSX.utils.aoa_to_sheet(disSheet);
   const wsWinners = XLSX.utils.aoa_to_sheet(winnersSummary);
 
- 
+
   const applyWinnerStyle = (ws: any) => {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);

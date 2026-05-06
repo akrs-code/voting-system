@@ -92,7 +92,7 @@ export const updatePosition = async (req, res) => {
         const updatedPosition = await Position.findByIdAndUpdate(
             id,
             { $set: req.body },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).lean();
 
         if (!updatedPosition) {

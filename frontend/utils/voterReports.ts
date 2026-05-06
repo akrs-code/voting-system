@@ -9,10 +9,8 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
   const votedList = voters.filter(v => v.hasVoted);
   const pendingList = voters.filter(v => !v.hasVoted);
 
-  // Calculate comprehensive statistics
   const turnoutRate = voters.length > 0 ? ((votedList.length / voters.length) * 100).toFixed(2) : "0.00";
-  
-  // Department-wise statistics
+
   const deptStats = ['DCS', 'DIS'].map(dept => {
     const deptVoters = voters.filter(v => v.department === dept);
     const deptVoted = deptVoters.filter(v => v.hasVoted);
@@ -20,7 +18,6 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
     return { department: dept, total: deptVoters.length, voted: deptVoted.length, pending: deptVoters.length - deptVoted.length, turnoutRate: deptTurnout };
   });
 
-  // Year-level statistics
   const yearStats = [1, 2, 3, 4].map(year => {
     const yearVoters = voters.filter(v => v.yearLevel === year);
     const yearVoted = yearVoters.filter(v => v.hasVoted);
@@ -69,7 +66,6 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
   const wsVoted = XLSX.utils.json_to_sheet(mapVoterData(votedList));
   const wsPending = XLSX.utils.json_to_sheet(mapVoterData(pendingList));
 
-  // Department-specific sheets
   const dcsVoters = voters.filter(v => v.department === 'DCS');
   const disVoters = voters.filter(v => v.department === 'DIS');
   const wsDCS = XLSX.utils.json_to_sheet(mapVoterData(dcsVoters));
@@ -97,7 +93,6 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
   });
   wsSummary['!cols'] = summaryColWidths;
 
-  // Apply styling to summary sheet
   const applySummaryStyle = (ws: any) => {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);

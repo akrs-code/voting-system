@@ -206,9 +206,9 @@ const Candidates = () => {
               <table className="w-full text-left border-collapse min-w-200">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
-                    <th className="px-6 md:px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Candidate Identity</th>
+                    <th className="px-6 md:px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70">Candidate Details</th>
                     <th className="px-6 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Partylist</th>
-                    <th className="px-6 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Academic Scope</th>
+                    <th className="px-6 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-center">Scope</th>
                     <th className="px-6 md:px-10 py-5 text-[#2f318d] font-bold text-[0.7rem] uppercase tracking-widest opacity-70 text-right">Actions</th>
                   </tr>
                 </thead>
