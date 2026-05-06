@@ -21,7 +21,10 @@ const electionSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  
+  eligibleVoters: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }]
 }, { timestamps: true });
 
 export default mongoose.model("Election", electionSchema);

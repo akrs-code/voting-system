@@ -7,5 +7,9 @@ export const electionService = {
   update: async (id: string, data: any) => (await API.patch(`/elections/${id}`, data)).data,
   toggleActive: async (id: string) => (await API.patch(`/elections/${id}/status`)).data,
   toggleLock: async (id: string) => (await API.patch(`/elections/${id}/lock`)).data,
-  delete: async (id: string) => (await API.delete(`/elections/${id}`)).data
+  delete: async (id: string) => (await API.delete(`/elections/${id}`)).data,
+  
+  // New voter assignment methods
+  getVoters: async (id: string) => (await API.get(`/elections/${id}/voters`)).data,
+  assignVoters: async (id: string, voterIds: string[]) => (await API.patch(`/elections/${id}/voters`, { voterIds })).data
 };

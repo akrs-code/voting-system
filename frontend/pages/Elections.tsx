@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import {
   Plus, Loader2, Trash2, X,
-  CheckCircle2, AlertCircle, Lock, Unlock
+  CheckCircle2, AlertCircle, Lock, Unlock, Users
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { electionService } from '../services/electionService';
 import { Election } from 'types/interface';
+import VoterSelectionModal from '../components/VoterSelectionModal';
 
 const Elections = () => {
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  const [voterModalData, setVoterModalData] = useState<{ id: string; title: string } | null>(null);
 
   const validationSchema = Yup.object({
     title: Yup.string().min(5, "Title is too short").required("Election title is required"),
@@ -146,6 +149,9 @@ const Elections = () => {
                     </td>
                     <td className="px-6 md:px-10 py-4 text-right">
                       <div className="flex justify-end items-center gap-3">
+
+                        <div className="h-8 w-px bg-slate-100 mx-1" />
+
                         <button
                           disabled={processingId === election._id}
                           onClick={() => handleToggleActive(election._id, election.isActive)}
@@ -157,6 +163,13 @@ const Elections = () => {
                         </button>
 
                         <div className="h-8 w-px bg-slate-100 mx-1" />
+                        <button
+                          onClick={() => setVoterModalData({ id: election._id, title: election.title })}
+                          className="p-2 bg-indigo-50 text-[#2f318d] hover:bg-[#2f318d] hover:text-white rounded-xl transition-all border border-indigo-100"
+                          title="Manage Voters"
+                        >
+                          <Users size={16} />
+                        </button>
                         <button
                           disabled={processingId === election._id}
                           onClick={() => handleToggleLock(election._id, election.isLocked)}
@@ -266,6 +279,14 @@ const Elections = () => {
             </Formik>
           </div>
         </div>
+      )}
+
+      {voterModalData && (
+        <VoterSelectionModal
+          electionId={voterModalData.id}
+          electionTitle={voterModalData.title}
+          onClose={() => setVoterModalData(null)}
+        />
       )}
     </div>
   );

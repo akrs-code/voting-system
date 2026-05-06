@@ -6,7 +6,9 @@ import {
     getAllElections, 
     getActiveElection, 
     activateElection, 
-    toggleLockElection
+    toggleLockElection,
+    assignVoters,
+    getEligibleVoters
 } from "../controllers/electionController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { authorizeRole } from "../middleware/authorizeRole.js";
@@ -21,5 +23,8 @@ router.delete("/:id", verifyToken, authorizeRole("admin"), deleteElection);
 
 router.patch("/:id/status", verifyToken, authorizeRole("admin"), activateElection);
 router.patch("/:id/lock", verifyToken, authorizeRole("admin"), toggleLockElection);
+
+router.get("/:id/voters", verifyToken, authorizeRole("admin"), getEligibleVoters);
+router.patch("/:id/voters", verifyToken, authorizeRole("admin"), assignVoters);
 
 export default router;

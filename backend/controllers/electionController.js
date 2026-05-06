@@ -34,7 +34,7 @@ export const getAllElections = async (req, res) => {
 
 export const updateElection = async (req, res) => {
     try {
-        const election = await Election.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const election = await Election.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
 
         const io = req.app.get('io');
         if (io) io.emit('election_updated', election);
@@ -48,7 +48,7 @@ export const updateElection = async (req, res) => {
 export const activateElection = async (req, res) => {
     try {
         await Election.updateMany({}, { isActive: false });
-        const election = await Election.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });
+        const election = await Election.findByIdAndUpdate(req.params.id, { isActive: true }, { returnDocument: 'after' });
 
         const io = req.app.get('io');
         if (io) io.emit('election_activated', election._id);
@@ -89,5 +89,41 @@ export const deleteElection = async (req, res) => {
         res.json({ message: "Election cycle has been permanently deleted." });
     } catch (error) {
         res.status(500).json({ message: "Failed to delete the election cycle. " + error.message });
+    }
+};
+
+export const assignVoters = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { voterIds } = req.body;
+
+        if (!Array.isArray(voterIds)) {
+            return res.status(400).json({ message: "Invalid payload. voterIds must be an array." });
+        }
+
+        const election = await Election.findByIdAndUpdate(
+            id,
+            { eligibleVoters: voterIds },
+            { returnDocument: 'after' }
+        );
+
+        if (!election) {
+            return res.status(404).json({ message: "Election cycle not found." });
+        }
+
+        res.json({ message: "Voter list updated successfully", count: election.eligibleVoters.length });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update voter assignments. " + error.message });
+    }
+};
+
+export const getEligibleVoters = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const election = await Election.findById(id).populate("eligibleVoters", "name studentId department yearLevel email");
+        if (!election) return res.status(404).json({ message: "Election not found" });
+        res.json(election.eligibleVoters);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch assigned voters. " + error.message });
     }
 };

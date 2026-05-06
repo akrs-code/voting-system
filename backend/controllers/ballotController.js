@@ -27,6 +27,11 @@ export const castBallot = async (req, res) => {
         const election = await Election.findById(electionId).session(session);
 
         if (!user || !election?.isActive) throw new Error("The election is either closed or you are not authorized to vote.");
+
+        if (!election.eligibleVoters.includes(userId)) {
+            throw new Error("You are not registered as an eligible voter for this election.");
+        }
+
         if (user.votedElections.includes(electionId)) throw new Error("You have already cast your vote in this election cycle.");
 
         const ballotEntries = [];
@@ -135,7 +140,16 @@ export const getElectionStats = async (req, res) => {
         const { electionId } = req.params;
         const { dept } = req.query;
 
-        const userFilter = { role: 'voter', isVerified: 'approved' };
+        const election = await Election.findById(electionId).select("eligibleVoters");
+        if (!election) return res.status(404).json({ message: "Election not found" });
+
+        const voterIds = election.eligibleVoters || [];
+
+        const userFilter = {
+            _id: { $in: voterIds },
+            role: 'voter',
+            isVerified: 'approved'
+        };
         const candidateFilter = { election: electionId };
 
         if (dept && dept !== 'ALL') {
@@ -163,7 +177,17 @@ export const getBallot = async (req, res) => {
     try {
         const { electionId } = req.params;
         const eId = new mongoose.Types.ObjectId(electionId);
+        const userId = req.user._id;
         const { department: userDept, yearLevel: userYear } = req.user;
+
+        const election = await Election.findById(eId).select("eligibleVoters isActive");
+        if (!election || !election.isActive) {
+            return res.status(404).json({ message: "No active election found with this ID." });
+        }
+
+        if (!election.eligibleVoters.includes(userId)) {
+            return res.status(403).json({ message: "You are not authorized to vote in this election." });
+        }
 
         const [positions, candidates] = await Promise.all([
             Position.find({
