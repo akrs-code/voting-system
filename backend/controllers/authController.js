@@ -282,6 +282,14 @@ export const manageApplication = async (req, res) => {
             user.isVerified = "approved";
             await user.save();
 
+            const activeElection = await mongoose.model("Election").findOne({ isActive: true });
+            if (activeElection) {
+                if (!activeElection.eligibleVoters.includes(user._id)) {
+                    activeElection.eligibleVoters.push(user._id);
+                    await activeElection.save();
+                }
+            }
+
             try {
                 await sendStatusEmail(user.email, user.name, "approved");
             } catch (emailErr) {
@@ -339,4 +347,4 @@ export const getMe = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }
-};
+};

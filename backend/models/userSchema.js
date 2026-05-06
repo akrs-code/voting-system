@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
 
     isVerified: {
         type: String,
-        enum: ["in_progress","pending", "approved"],
+        enum: ["in_progress", "pending", "approved"],
         default: "in_progress",
     }
 }, { timestamps: true });
