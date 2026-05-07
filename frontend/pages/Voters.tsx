@@ -15,8 +15,11 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { voterService } from '../services/voterService';
 import Pagination from '../components/Pagination';
+import CustomDropdown from '../components/CustomDropdown';
 import { Voter } from 'types/interface';
 import { VoterReports } from "../utils/voterReports"
+import { GraduationCap, CheckCircle2 as CheckIcon, Filter } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Voters = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -93,8 +96,9 @@ const Voters = () => {
     try {
       await voterService.delete(id);
       setVoters(prev => prev.filter(item => item._id !== id));
+      toast.success("Student record deleted successfully.");
     } catch (error) {
-      alert("Delete failed. Please try again.");
+      toast.error("Delete failed. Please try again.");
     }
   };
 
@@ -162,33 +166,34 @@ const Voters = () => {
           />
         </div>
 
-        <div className="relative">
-          <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Statuses', value: 'all' },
+              { label: 'Voted', value: 'voted' },
+              { label: 'Pending', value: 'pending' },
+            ]}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="all">All Statuses</option>
-            <option value="voted">Voted</option>
-            <option value="pending">Pending</option>
-          </select>
+            onChange={setStatusFilter}
+            icon={<CheckIcon size={18} />}
+            placeholder="Status"
+          />
         </div>
 
-        <div className="relative">
-          <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Year Levels', value: 'all' },
+              { label: '1st Year', value: '1' },
+              { label: '2nd Year', value: '2' },
+              { label: '3rd Year', value: '3' },
+              { label: '4th Year', value: '4' },
+            ]}
             value={yearFilter}
-            onChange={(e) => setYearFilter(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="all">All Year Levels</option>
-            {[1, 2, 3, 4].map(lvl => (
-              <option key={lvl} value={lvl}>
-                {ordinals[lvl]} Year
-              </option>
-            ))}
-          </select>
+            onChange={setYearFilter}
+            icon={<GraduationCap size={18} />}
+            placeholder="Year Level"
+          />
         </div>
       </div>
 
@@ -298,20 +303,22 @@ const Voters = () => {
                     const payload: any = { ...values };
                     if (!values.password) delete payload.password;
                     await voterService.update(selectedVoter._id, payload);
+                    toast.success("Student profile updated.");
                   } else {
                     await voterService.create(values);
+                    toast.success("New student registered.");
                   }
                   setShowModal(false);
                   await fetchVoters();
                 } catch (err: any) {
                   const serverMessage = err.response?.data?.message || err.response?.data?.error || "Student record update failed. Please try again.";
-                  alert(serverMessage);
+                  toast.error(serverMessage);
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
-              {({ isSubmitting, errors, touched }) => (
+              {({ isSubmitting, errors, touched, values, setFieldValue }) => (
                 <Form className="space-y-4 md:space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-xs md:text-sm font-semibold text-slate-700">Full Name</label>
@@ -351,17 +358,32 @@ const Voters = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs md:text-sm font-semibold text-slate-700">Deparment</label>
-                      <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="DIS">DIS Department</option>
-                        <option value="DCS">DCS Department</option>
-                      </Field>
+                      <label className="text-xs md:text-sm font-semibold text-slate-700">Department</label>
+                      <CustomDropdown
+                        options={[
+                          { label: 'DIS Department', value: 'DIS' },
+                          { label: 'DCS Department', value: 'DCS' },
+                        ]}
+                        value={values.department}
+                        onChange={(val) => setFieldValue('department', val)}
+                        placeholder="Select Department"
+                      />
+                      <ErrorMessage name="department" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Year</label>
-                      <Field as="select" name="yearLevel" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        {[1, 2, 3, 4].map(lvl => <option key={lvl} value={lvl}>{lvl} Year</option>)}
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: '1st Year', value: '1' },
+                          { label: '2nd Year', value: '2' },
+                          { label: '3rd Year', value: '3' },
+                          { label: '4th Year', value: '4' },
+                        ]}
+                        value={values.yearLevel.toString()}
+                        onChange={(val) => setFieldValue('yearLevel', parseInt(val))}
+                        placeholder="Select Year"
+                      />
+                      <ErrorMessage name="yearLevel" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                     </div>
                   </div>
                   <button type="submit" disabled={isSubmitting} className="h-12 md:h-14 w-full bg-[#2f318d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 mt-2">

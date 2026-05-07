@@ -4,7 +4,10 @@ import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { authService } from "../services/authService";
+import CustomDropdown from "../components/CustomDropdown";
 import { User } from "../types/interface";
+import { GraduationCap } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function SignupApplication() {
   const location = useLocation();
@@ -66,14 +69,17 @@ export default function SignupApplication() {
             const { confirmPassword, ...signupData } = values;
             await authService.submitApplication(signupData as Partial<User>);
             setIsSuccess(true);
+            toast.success("Application sent successfully!");
           } catch (err: any) {
-            setStatus(err.response?.data?.error || "Submission failed. Please try again.");
+            const errorMsg = err.response?.data?.error || "Submission failed. Please try again.";
+            setStatus(errorMsg);
+            toast.error(errorMsg);
           } finally {
             setSubmitting(false);
           }
         }}
       >
-        {({ values, handleChange, handleBlur, isSubmitting, status, errors, touched }) => (
+        {({ values, handleChange, handleBlur, isSubmitting, status, errors, touched, setFieldValue }) => (
           <Form className="relative w-full max-w-lg animate-in fade-in zoom-in-95 duration-500 bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 p-10">
             <div className="flex justify-center mt-4">
               <img src="/cics.png" alt="CICS Logo" className="h-20 w-20 object-contain" />
@@ -136,19 +142,19 @@ export default function SignupApplication() {
             <div className="grid grid-cols-2 gap-x-4">
               <div className="space-y-2 mb-5">
                 <label className="text-sm font-semibold text-slate-700 ml-1">Year Level</label>
-                <select
-                  name="yearLevel"
-                  value={values.yearLevel}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className="h-12 w-full border px-4 text-sm rounded-xl border-slate-200 bg-slate-50/50 outline-none font-medium focus:border-[#2f318d] focus:ring-4 focus:ring-indigo-50 appearance-none"
-                >
-                  <option value="">Select Year</option>
-                  <option value="1">1st Year</option>
-                  <option value="2">2nd Year</option>
-                  <option value="3">3rd Year</option>
-                  <option value="4">4th Year</option>
-                </select>
+                <CustomDropdown
+                  options={[
+                    { label: 'Select Year', value: '' },
+                    { label: '1st Year', value: '1' },
+                    { label: '2nd Year', value: '2' },
+                    { label: '3rd Year', value: '3' },
+                    { label: '4th Year', value: '4' },
+                  ]}
+                  value={values.yearLevel.toString()}
+                  onChange={(val) => setFieldValue('yearLevel', val ? parseInt(val) : "")}
+                  placeholder="Select Year"
+                  icon={<GraduationCap size={18} />}
+                />
                 <ErrorMessage name="yearLevel" component="p" className="text-[10px] text-red-500 font-medium ml-1" />
               </div>
 

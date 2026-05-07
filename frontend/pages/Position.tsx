@@ -15,7 +15,10 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
+import CustomDropdown from '../components/CustomDropdown';
 import { Position } from 'types/interface';
+import { GraduationCap, Building2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Positions = () => {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -85,8 +88,9 @@ const Positions = () => {
     try {
       await positionService.delete(id);
       setPositions(prev => prev.filter(item => item._id !== id));
+      toast.success("Position removed.");
     } catch (err) {
-      alert("Delete failed. Please try again.");
+      toast.error("Delete failed. Please try again.");
     }
   };
 
@@ -123,29 +127,31 @@ const Positions = () => {
           />
         </div>
 
-        <div className="relative">
-          <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Election Cycles', value: '' },
+              ...elections.map(el => ({ label: el.title, value: el._id }))
+            ]}
             value={selectedElectionId}
-            onChange={(e) => setSelectedElectionId(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="">All Election Cycles</option>
-            {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
-          </select>
+            onChange={setSelectedElectionId}
+            icon={<Briefcase size={18} />}
+            placeholder="Election Cycle"
+          />
         </div>
 
-        <div className="relative">
-          <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Departments', value: 'ALL' },
+              { label: 'DIS Department', value: 'DIS' },
+              { label: 'DCS Department', value: 'DCS' },
+            ]}
             value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="ALL">All Departments</option>
-            <option value="DIS">DIS Department</option>
-            <option value="DCS">DCS Department</option>
-          </select>
+            onChange={setDeptFilter}
+            icon={<Building2 size={18} />}
+            placeholder="Department"
+          />
         </div>
       </div>
 
@@ -251,20 +257,22 @@ const Positions = () => {
 
                   if (isEditing && selectedPos) {
                     await positionService.update(selectedPos._id, payload);
+                    toast.success("Position updated.");
                   } else {
                     await positionService.create(payload);
+                    toast.success("New position created.");
                   }
 
                   setShowModal(false);
                   fetchData();
                 } catch (err) {
-                  alert("Transaction failed. Please try again.");
+                  toast.error("Transaction failed. Please try again.");
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
-              {({ isSubmitting, errors, touched }) => (
+              {({ isSubmitting, errors, touched, values, setFieldValue }) => (
                 <Form className="space-y-4 md:space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-xs md:text-sm font-semibold text-slate-700">Position Title</label>
@@ -274,29 +282,47 @@ const Positions = () => {
                   <div className='grid grid-cols-2 gap-4'>
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Election Cycle</label>
-                      <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="">Select Cycle...</option>
-                        {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: 'Select Cycle...', value: '' },
+                          ...elections.map(el => ({ label: el.title, value: el._id }))
+                        ]}
+                        value={values.electionId}
+                        onChange={(val) => setFieldValue('electionId', val)}
+                        placeholder="Select Cycle"
+                      />
                       <ErrorMessage name="electionId" component="div" className="text-[10px] text-red-500 font-bold ml-1" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Scope</label>
-                      <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="ALL">All Department</option>
-                        <option value="DIS">DIS Department</option>
-                        <option value="DCS">DCS Department</option>
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: 'All Department', value: 'ALL' },
+                          { label: 'DIS Department', value: 'DIS' },
+                          { label: 'DCS Department', value: 'DCS' },
+                        ]}
+                        value={values.department}
+                        onChange={(val) => setFieldValue('department', val)}
+                        placeholder="Select Scope"
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Year</label>
-                      <Field as="select" name="yearLevel" className="h-12 md:h-14 w-full border border-slate-200 bg-slate-50/50 px-3 md:px-4 rounded-2xl text-xs md:text-sm font-bold text-[#2f318d] outline-none">
-                        <option value="">All Years</option>
-                        {[1, 2, 3, 4].map(lvl => <option key={lvl} value={lvl}>Year {lvl}</option>)}
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: 'All Years', value: '' },
+                          { label: 'Year 1', value: '1' },
+                          { label: 'Year 2', value: '2' },
+                          { label: 'Year 3', value: '3' },
+                          { label: 'Year 4', value: '4' },
+                        ]}
+                        value={values.yearLevel?.toString() || ''}
+                        onChange={(val) => setFieldValue('yearLevel', val)}
+                        placeholder="Select Year"
+                      />
                     </div>
                     <div className="space-y-1.5 col-span-1 md:col-span-1">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Max Votes</label>

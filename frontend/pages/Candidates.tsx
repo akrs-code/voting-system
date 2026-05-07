@@ -9,7 +9,9 @@ import { candidateService } from '../services/candidateService';
 import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
 import Pagination from '../components/Pagination';
+import CustomDropdown from '../components/CustomDropdown';
 import { Candidate } from 'types/interface';
+import toast from 'react-hot-toast';
 
 const FormWatcher = ({ onFilterChange }: { onFilterChange: (electionId: string, dept: string) => void }) => {
   const { values, setFieldValue } = useFormikContext<{ electionId: string; department: string; position: string }>();
@@ -125,8 +127,9 @@ const Candidates = () => {
     try {
       await candidateService.delete(id);
       fetchData();
+      toast.success("Candidate record removed.");
     } catch {
-      alert("Error: Could not remove candidate.");
+      toast.error("Error: Could not remove candidate.");
     }
   };
 
@@ -161,31 +164,31 @@ const Candidates = () => {
           />
         </div>
 
-        <div className="relative">
-          <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-          <select
-            className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Election Cycles', value: '' },
+              ...elections.map(el => ({ label: el.title, value: el._id }))
+            ]}
             value={selectedElectionId}
-            onChange={(e) => setSelectedElectionId(e.target.value)}
-          >
-            <option value="">All Election Cycles</option>
-            {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
-          </select>
-          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+            onChange={setSelectedElectionId}
+            icon={<Briefcase size={18} />}
+            placeholder="Election Cycle"
+          />
         </div>
 
-        <div className="relative">
-          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-          <select
-            className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+        <div className="lg:col-span-1">
+          <CustomDropdown
+            options={[
+              { label: 'All Departments', value: 'ALL' },
+              { label: 'DIS Department', value: 'DIS' },
+              { label: 'DCS Department', value: 'DCS' },
+            ]}
             value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-          >
-            <option value="ALL">All Departments</option>
-            <option value="DIS">DIS Department</option>
-            <option value="DCS">DCS Department</option>
-          </select>
-          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={16} />
+            onChange={setSelectedDepartment}
+            icon={<Building2 size={18} />}
+            placeholder="Department"
+          />
         </div>
       </div>
 
@@ -301,20 +304,22 @@ const Candidates = () => {
                   }
                   if (isEditing && selectedCand) {
                     await candidateService.update(selectedCand._id, formData);
+                    toast.success("Candidate profile updated.");
                   } else {
                     await candidateService.create(formData);
+                    toast.success("Candidate registered successfully.");
                   }
                   closeModal();
                   resetForm();
                   fetchData();
                 } catch (err: any) {
-                  alert(err.response?.data?.error || "Error encountered.");
+                  toast.error(err.response?.data?.error || "Error encountered.");
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
-              {({ isSubmitting, errors, touched, values }) => (
+              {({ isSubmitting, errors, touched, values, setFieldValue }) => (
                 <Form className="space-y-6">
                   <FormWatcher onFilterChange={handleModalFilterChange} />
                   <div className="flex justify-center mb-6">
@@ -351,29 +356,45 @@ const Candidates = () => {
 
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Election Cycle</label>
-                      <Field as="select" name="electionId" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="">Choose Election Cycle...</option>
-                        {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: 'Choose Election Cycle...', value: '' },
+                          ...elections.map(el => ({ label: el.title, value: el._id }))
+                        ]}
+                        value={values.electionId}
+                        onChange={(val) => setFieldValue('electionId', val)}
+                        placeholder="Choose Cycle"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Department Scope</label>
-                      <Field as="select" name="department" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="ALL">ALL Department</option>
-                        <option value="DIS">DIS Department</option>
-                        <option value="DCS">DCS Department</option>
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { label: 'ALL Department', value: 'ALL' },
+                          { label: 'DIS Department', value: 'DIS' },
+                          { label: 'DCS Department', value: 'DCS' },
+                        ]}
+                        value={values.department}
+                        onChange={(val) => setFieldValue('department', val)}
+                        placeholder="Select Scope"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Position Title</label>
-                      <Field as="select" name="position" className="h-12 md:h-14 w-full border border-slate-200 px-5 rounded-2xl font-bold text-[#2f318d] bg-slate-50/50 appearance-none outline-none focus:border-[#2f318d] cursor-pointer text-sm">
-                        <option value="">
-                          {!values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position..."}
-                        </option>
-                        {modalPositions.map(pos => <option key={pos._id} value={pos._id}>{pos.name}</option>)}
-                      </Field>
+                      <CustomDropdown
+                        options={[
+                          { 
+                            label: !values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position...", 
+                            value: "" 
+                          },
+                          ...modalPositions.map(pos => ({ label: pos.name, value: pos._id }))
+                        ]}
+                        value={values.position}
+                        onChange={(val) => setFieldValue('position', val)}
+                        placeholder="Select Position"
+                      />
                       <ErrorMessage name="position" component="div" className="text-[10px] text-red-500 font-bold ml-2" />
                     </div>
                   </div>

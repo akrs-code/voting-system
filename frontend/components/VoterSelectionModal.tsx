@@ -4,6 +4,9 @@ import { voterService } from '../services/voterService';
 import { electionService } from '../services/electionService';
 import { Voter } from '../types/interface';
 import Pagination from './Pagination';
+import CustomDropdown from './CustomDropdown';
+import { Building2, GraduationCap } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Props {
   electionId: string;
@@ -91,9 +94,10 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
     try {
       setSaving(true);
       await electionService.assignVoters(electionId, Array.from(selectedVoterIds));
+      toast.success("Voter eligibility updated successfully.");
       onClose();
     } catch (error) {
-      alert("Failed to save voter assignments.");
+      toast.error("Failed to save voter assignments.");
     } finally {
       setSaving(false);
     }
@@ -114,7 +118,6 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
-        {/* Header */}
         <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -130,7 +133,6 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
           </button>
         </div>
 
-        {/* Filters */}
         <div className="p-4 md:p-6 bg-white border-b border-slate-100 space-y-4 shrink-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative group">
@@ -143,33 +145,37 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="relative">
-              <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-              <select
-                className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+            <div className="lg:col-span-1">
+              <CustomDropdown
+                options={[
+                  { label: 'All Departments', value: 'ALL' },
+                  { label: 'DIS Department', value: 'DIS' },
+                  { label: 'DCS Department', value: 'DCS' },
+                ]}
                 value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-              >
-                <option value="ALL">All Departments</option>
-                <option value="DIS">DIS Department</option>
-                <option value="DCS">DCS Department</option>
-              </select>
+                onChange={setDeptFilter}
+                icon={<Building2 size={18} />}
+                placeholder="Department"
+              />
             </div>
-            <div className="relative">
-              <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-              <select
-                className="w-full h-12 pl-12 pr-10 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
+            <div className="lg:col-span-1">
+              <CustomDropdown
+                options={[
+                  { label: 'All Year Levels', value: 'all' },
+                  { label: '1st Year', value: '1' },
+                  { label: '2nd Year', value: '2' },
+                  { label: '3rd Year', value: '3' },
+                  { label: '4th Year', value: '4' },
+                ]}
                 value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
-              >
-                <option value="all">All Year Levels</option>
-                {[1, 2, 3, 4].map(lvl => <option key={lvl} value={lvl}>{ordinals[lvl]} Year</option>)}
-              </select>
+                onChange={setYearFilter}
+                icon={<GraduationCap size={18} />}
+                placeholder="Year Level"
+              />
             </div>
           </div>
         </div>
 
-        {/* Voter Table */}
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 opacity-40">
@@ -239,7 +245,6 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
           )}
         </div>
 
-        {/* Pagination */}
         {!loading && filteredVoters.length > itemsPerPage && (
           <div className="px-6 py-3 border-t border-slate-100 bg-white">
             <Pagination
@@ -250,7 +255,6 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
           </div>
         )}
 
-        {/* Footer */}
         <div className="p-6 md:p-8 border-t border-slate-100 bg-slate-50/80 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0">
           <div className="flex flex-col items-center sm:items-start">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selection Pool</span>
