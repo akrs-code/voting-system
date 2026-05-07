@@ -86,7 +86,7 @@ const Positions = () => {
     if (!window.confirm("Are you sure you want to delete this position? Associated candidate records may be affected.")) return;
     try {
       await positionService.delete(id);
-      setPositions(prev => prev.filter(item => item._id !== id));
+      await fetchData();
       toast.success("Position removed.");
     } catch (err) {
       toast.error("Delete failed. Please try again.");
@@ -200,7 +200,7 @@ const Positions = () => {
                     <td className="px-6 md:px-10 py-4 text-center">
                       <div className="flex justify-center gap-2 items-center">
 
-                        <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-[#2f318d]-50 rounded-md border border-[#2f318d]-100 uppercase">
+                        <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase">
                           Max: {pos.maxVote || 0}
                         </span>
                       </div>

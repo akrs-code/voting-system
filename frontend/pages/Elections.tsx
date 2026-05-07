@@ -8,6 +8,7 @@ import * as Yup from 'yup';
 import { electionService } from '../services/electionService';
 import { Election } from 'types/interface';
 import VoterSelectionModal from '../components/VoterSelectionModal';
+import toast from 'react-hot-toast';
 
 const Elections = () => {
   const [elections, setElections] = useState<Election[]>([]);
@@ -43,12 +44,10 @@ const Elections = () => {
     setProcessingId(id);
     try {
       await electionService.toggleActive(id);
-      setElections(prev => prev.map(el => ({
-        ...el,
-        isActive: el._id === id ? !currentStatus : false
-      })));
-    } catch (error) {
-      alert("Status update failed. Please try again.");
+      await fetchElections();
+      toast.success(`Election ${!currentStatus ? 'activated' : 'deactivated'} successfully.`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Status update failed.");
     } finally {
       setProcessingId(null);
     }
@@ -58,12 +57,10 @@ const Elections = () => {
     setProcessingId(id);
     try {
       await electionService.toggleLock(id);
-      setElections(prev => prev.map(el => ({
-        ...el,
-        isLocked: el._id === id ? !currentLockStatus : el.isLocked
-      })));
+      await fetchElections();
+      toast.success(`Election ${!currentLockStatus ? 'locked' : 'unlocked'} successfully.`);
     } catch (error) {
-      alert("Failed to update lock status.");
+      toast.error("Failed to update lock status.");
     } finally {
       setProcessingId(null);
     }
@@ -73,9 +70,10 @@ const Elections = () => {
     if (!window.confirm("Are you sure you want to permanently delete this election cycle? This action cannot be undone.")) return;
     try {
       await electionService.delete(id);
-      setElections(prev => prev.filter(el => el._id !== id));
-    } catch (error) {
-      alert("Delete failed. Please ensure the election is inactive before deleting.");
+      await fetchElections();
+      toast.success("Election cycle permanently removed.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Delete failed. Ensure the election is inactive.");
     }
   };
 
@@ -217,8 +215,9 @@ const Elections = () => {
                   setShowModal(false);
                   resetForm();
                   await fetchElections();
+                  toast.success("New election cycle initialized.");
                 } catch (err: any) {
-                  alert(err.response?.data?.error || "Transaction failed");
+                  toast.error(err.response?.data?.error || "Transaction failed");
                 } finally {
                   setSubmitting(false);
                 }
