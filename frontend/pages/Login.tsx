@@ -109,8 +109,15 @@ export default function Login() {
 
 
             {status && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl">
-                <p className="text-sm font-medium text-red-600 text-center">{status}</p>
+              <div className={`mb-6 p-4 rounded-2xl border ${status.toLowerCase().includes('pending') ? 'bg-indigo-50 border-indigo-100' : 'bg-red-50 border-red-100'}`}>
+                <p className={`text-sm font-medium text-center ${status.toLowerCase().includes('pending') ? 'text-[#2f318d]' : 'text-red-600'}`}>
+                  {status}
+                  {status.toLowerCase().includes('pending') && (
+                    <span className="block mt-2 text-xs font-bold uppercase tracking-wider opacity-70">
+                      Check your email for updates
+                    </span>
+                  )}
+                </p>
               </div>
             )}
 

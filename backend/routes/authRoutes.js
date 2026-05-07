@@ -21,6 +21,7 @@ router.use(verifyToken, authorizeRole("admin"));
 router.get("/users", getAllUsers);
 router.post("/users", signup);
 router.post("/users/bulk", bulkSignup);
+router.patch("/users/:id", updateUser);
 router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
 

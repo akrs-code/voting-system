@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
@@ -10,8 +10,26 @@ import toast from "react-hot-toast";
 
 export default function SignupApplication() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            navigate("/login");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isSuccess, navigate]);
 
   const dept = (location.pathname.includes("dis") ? "DIS" : "DCS") as "DIS" | "DCS";
 
@@ -41,9 +59,19 @@ export default function SignupApplication() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Application Sent</h1>
-          <p className="text-slate-500 mb-8 leading-relaxed text-sm">
+          <p className="text-slate-500 mb-6 leading-relaxed text-sm">
             Your application for the <span className="font-bold text-[#2f318d]">{dept}</span> department is now pending. Please wait for admin approval to log in.
           </p>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-8">
+            <p className="text-[#2f318d] text-xs font-bold uppercase tracking-wider mb-1">Important</p>
+            <p className="text-slate-600 text-[13px]">
+              Please <b>check your email</b> for updates regarding your application status.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Redirecting to login in {countdown} seconds...</span>
+          </div>
         </div>
       </div>
     );

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import Election from "../models/electionSchema.js";
 import { sendStatusEmail } from "../utils/emailHelper.js";
 import { handleMongoError } from "../utils/errorHandler.js";
+import Ballot from "../models/ballotSchema.js";
 
 export const login = async (req, res) => {
     try {
@@ -108,7 +109,7 @@ export const updateUser = async (req, res) => {
         if (!user) return res.status(404).json({ message: "User account not found." });
 
         if (studentId) {
-            const normalizedId = studentId.trim()
+            const normalizedId = studentId.trim().toLowerCase();
             if (normalizedId !== user.studentId) {
                 const existingUser = await User.findOne({ studentId: normalizedId });
                 if (existingUser) return res.status(400).json({ message: `Student ID ${normalizedId} is already assigned to another user.` });
@@ -139,16 +140,30 @@ export const getAllUsers = async (req, res) => {
             .select("-password")
             .sort({ name: 1 });
 
+        const activeElection = await Election.findOne({ isActive: true });
+        let ballotMap = new Map();
+
+        if (activeElection) {
+            const ballots = await Ballot.find({ election: activeElection._id });
+            ballots.forEach(b => {
+                if (b.voter) {
+                    ballotMap.set(b.voter.toString(), b.votes.length);
+                }
+            });
+        }
+
         const usersWithStatus = users.map(user => {
             const userObj = user.toObject();
             return {
                 ...userObj,
-                hasVoted: userObj.votedElections.length > 0
+                hasVoted: userObj.votedElections.length > 0,
+                voteCount: ballotMap.get(user._id.toString()) || 0
             };
         });
 
         res.json(usersWithStatus);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Unable to retrieve user list. Please check your connection." });
     }
 };
@@ -157,8 +172,12 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const deletedUser = await User.findByIdAndDelete(id);
-        if (!deletedUser) return res.status(404).json({ message: "The user account you are trying to delete does not exist." });
-        res.json({ message: "User deleted successfully" });
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: "The user account you are trying to delete does not exist." });
+        }
+
+        res.json({ message: "User account and all associated voting footprints removed successfully." });
     } catch (error) {
         res.status(500).json({ message: "Error deleting user account: " + error.message });
     }
@@ -294,18 +313,16 @@ export const manageApplication = async (req, res) => {
                 }
             }
 
-            try {
-                await sendStatusEmail(user.email, user.name, "approved");
-            } catch (emailErr) {
-                console.error("Email message:", emailErr);
-            }
-
             const io = req.app.get('socketio');
             if (io) {
                 io.emit('applicationManaged', { id, status: 'approved' });
             }
 
-            return res.json({ message: "User approved and notified." });
+            sendStatusEmail(user.email, user.name, "approved").catch(err => 
+                console.error("Approval Email Error:", err)
+            );
+
+            return res.json({ message: "User approved successfully." });
         }
 
         if (status === "rejected") {
@@ -313,18 +330,16 @@ export const manageApplication = async (req, res) => {
 
             await User.findByIdAndDelete(id);
 
-            try {
-                await sendStatusEmail(email, name, "rejected");
-            } catch (emailErr) {
-                console.error("Email message:", emailErr);
-            }
-
             const io = req.app.get('socketio');
             if (io) {
                 io.emit('applicationManaged', { id, status: 'rejected' });
             }
 
-            return res.json({ message: "Application rejected and user notified." });
+            sendStatusEmail(email, name, "rejected").catch(err => 
+                console.error("Rejection Email Error:", err)
+            );
+
+            return res.json({ message: "Application rejected and removed." });
         }
 
         res.status(400).json({ message: "Invalid status" });
