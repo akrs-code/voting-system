@@ -1,7 +1,10 @@
 import User from "../models/userSchema.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import Election from "../models/electionSchema.js";
 import { sendStatusEmail } from "../utils/emailHelper.js";
+import { handleMongoError } from "../utils/errorHandler.js";
 
 export const login = async (req, res) => {
     try {
@@ -56,7 +59,7 @@ export const login = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({ message: "An unexpected server error occurred during login. Please try again later." });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -93,7 +96,7 @@ export const signup = async (req, res) => {
             studentId: newUser.studentId
         });
     } catch (error) {
-        return res.status(500).json({ message: "Account creation failed: " + error.message });
+        return res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -127,7 +130,7 @@ export const updateUser = async (req, res) => {
         await user.save();
         res.json({ message: "User updated successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Failed to update user profile. " + error.message });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -248,7 +251,7 @@ export const submitApplication = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await User.create({
+        const application = await User.create({
             name: name.trim(),
             studentId: normalizedId,
             password: hashedPassword,
@@ -259,12 +262,14 @@ export const submitApplication = async (req, res) => {
             isVerified: "pending"
         });
 
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('newApplication', application);
+        }
+
         res.status(201).json({ message: "Application submitted successfully." });
     } catch (error) {
-        if (error.code === 11000) {
-            return res.status(409).json({ message: "A user with this ID or email is already registered." });
-        }
-        res.status(500).json({ message: "Application submission failed due to a server error. Please try again." });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -282,9 +287,9 @@ export const manageApplication = async (req, res) => {
             user.isVerified = "approved";
             await user.save();
 
-            const activeElection = await mongoose.model("Election").findOne({ isActive: true });
+            const activeElection = await Election.findOne({ isActive: true });
             if (activeElection) {
-                if (!activeElection.eligibleVoters.includes(user._id)) {
+                if (!activeElection.eligibleVoters.some(voterId => voterId.equals(user._id))) {
                     activeElection.eligibleVoters.push(user._id);
                     await activeElection.save();
                 }
@@ -294,6 +299,11 @@ export const manageApplication = async (req, res) => {
                 await sendStatusEmail(user.email, user.name, "approved");
             } catch (emailErr) {
                 console.error("Email message:", emailErr);
+            }
+
+            const io = req.app.get('socketio');
+            if (io) {
+                io.emit('applicationManaged', { id, status: 'approved' });
             }
 
             return res.json({ message: "User approved and notified." });
@@ -308,6 +318,11 @@ export const manageApplication = async (req, res) => {
                 await sendStatusEmail(email, name, "rejected");
             } catch (emailErr) {
                 console.error("Email message:", emailErr);
+            }
+
+            const io = req.app.get('socketio');
+            if (io) {
+                io.emit('applicationManaged', { id, status: 'rejected' });
             }
 
             return res.json({ message: "Application rejected and user notified." });

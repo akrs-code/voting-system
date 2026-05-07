@@ -1,5 +1,6 @@
 import Candidate from "../models/candidateSchema.js";
 import Position from "../models/positionSchema.js";
+import { handleMongoError } from "../utils/errorHandler.js";
 
 export const addCandidate = async (req, res) => {
     try {
@@ -42,7 +43,7 @@ export const addCandidate = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ message: "An error occurred while adding the candidate. " + error.message });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -103,7 +104,7 @@ export const updateCandidate = async (req, res) => {
 
         res.json({ message: "Candidate updated successfully", updatedCandidate });
     } catch (error) {
-        res.status(500).json({ message: "Failed to update the candidate profile. " + error.message });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 

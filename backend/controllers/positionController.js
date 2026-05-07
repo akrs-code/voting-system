@@ -1,6 +1,7 @@
 import Position from "../models/positionSchema.js";
 import Candidate from "../models/candidateSchema.js";
 import Election from "../models/electionSchema.js";
+import { handleMongoError } from "../utils/errorHandler.js";
 
 export const createPosition = async (req, res) => {
     try {
@@ -20,7 +21,7 @@ export const createPosition = async (req, res) => {
 
         res.status(201).json(position);
     } catch (error) {
-        res.status(500).json({ message: "Failed to create the new position. " + error.message });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
@@ -101,7 +102,7 @@ export const updatePosition = async (req, res) => {
 
         res.status(200).json(updatedPosition);
     } catch (error) {
-        res.status(500).json({ message: "Failed to update the position details. " + error.message });
+        res.status(500).json({ message: handleMongoError(error) });
     }
 };
 
