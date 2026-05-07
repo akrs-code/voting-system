@@ -3,16 +3,21 @@ import {
   Loader2,
   Search,
   XCircle,
-  SlidersHorizontal,
   Clock,
   UserCheck,
   Eye,
   X,
-  AlertCircle
+  AlertCircle,
+  GraduationCap,
+  Building2
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import Pagination from '../components/Pagination';
+import CustomDropdown from '../components/CustomDropdown';
+import { socket } from '../services/socket';
 import { User } from '../types/interface';
+import { AnimatePresence, motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const Applications = () => {
   const [applications, setApplications] = useState<User[]>([]);
@@ -43,6 +48,26 @@ const Applications = () => {
 
   useEffect(() => {
     fetchApplications();
+
+    socket.connect();
+
+    socket.on('newApplication', (newApp: User) => {
+      setApplications(prev => {
+        
+        if (prev.find(app => app._id === newApp._id)) return prev;
+        return [newApp, ...prev];
+      });
+    });
+
+    socket.on('applicationManaged', ({ id }: { id: string, status: string }) => {
+      setApplications(prev => prev.filter(app => app._id !== id));
+    });
+
+    return () => {
+      socket.off('newApplication');
+      socket.off('applicationManaged');
+      socket.disconnect();
+    };
   }, []);
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
@@ -57,9 +82,10 @@ const Applications = () => {
       await authService.manageApplication(id, action);
       setApplications(prev => prev.filter(app => app._id !== id));
       setShowViewModal(false);
+      toast.success(`Application ${action === 'approved' ? 'approved' : 'rejected'} successfully.`);
     } catch (error: any) {
       const serverMessage = error.response?.data?.message || error.response?.data?.error || "Application processing failed. Please try again.";
-      alert(serverMessage);
+      toast.error(serverMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -108,39 +134,40 @@ const Applications = () => {
           <input
             type="text"
             placeholder="Search applicants by name or ID..."
-            className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm"
+            className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-semibold shadow-sm placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="relative">
-          <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1.5">
+          <CustomDropdown
+            options={[
+              { label: 'All Departments', value: 'ALL' },
+              { label: 'DIS Department', value: 'DIS' },
+              { label: 'DCS Department', value: 'DCS' },
+            ]}
             value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="ALL">ALL Departments</option>
-            <option value="DIS">DIS Department</option>
-            <option value="DCS">DCS Department</option>
-          </select>
+            onChange={setDeptFilter}
+            icon={<Building2 size={18} />}
+            placeholder="Department"
+          />
         </div>
 
-        <div className="relative">
-          <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <select
+        <div className="lg:col-span-1.5">
+          <CustomDropdown
+            options={[
+              { label: 'All Year Levels', value: 'all' },
+              { label: '1st Year', value: '1' },
+              { label: '2nd Year', value: '2' },
+              { label: '3rd Year', value: '3' },
+              { label: '4th Year', value: '4' },
+            ]}
             value={yearFilter}
-            onChange={(e) => setYearFilter(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] appearance-none text-sm font-semibold text-slate-600 cursor-pointer shadow-sm"
-          >
-            <option value="all">All Year Levels</option>
-            {[1, 2, 3, 4].map(lvl => (
-              <option key={lvl} value={lvl}>
-                {ordinals[lvl]} Year
-              </option>
-            ))}
-          </select>
+            onChange={setYearFilter}
+            icon={<GraduationCap size={18} />}
+            placeholder="Year Level"
+          />
         </div>
       </div>
 
@@ -152,7 +179,7 @@ const Applications = () => {
           </div>
         ) : filteredApps.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-          <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
+            <AlertCircle className="w-12 h-12 text-slate-200 mb-4" />
             <p className="text-slate-400 font-medium">Inbox clear. No pending applications.</p>
           </div>
         ) : (
@@ -168,45 +195,53 @@ const Applications = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {currentApps.map((app) => (
-                    <tr key={app._id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 md:px-10 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{app.name}</span>
-                          <span className="mt-1 text-[11px] text-slate-400 font-medium">{app.studentId}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 md:px-10 py-4 text-center">
-                        <div className="flex justify-center gap-2 items-center">
-                          <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
-                            {app.department}
-                          </span>
-                          <span className="text-slate-400 text-[11px] font-semibold">
-                            {app.yearLevel ? `${ordinals[app.yearLevel]} Year` : 'Pending Level'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 md:px-10 py-4 text-center">
-                        <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-600 border-amber-100">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          REVIEW REQUIRED
-                        </div>
-                      </td>
-                      <td className="px-6 md:px-10 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => handleViewDetails(app)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all">
-                            <Eye size={15} />
-                          </button>
-                          <button onClick={() => handleAction(app._id, 'approved')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all">
-                            <UserCheck size={15} />
-                          </button>
-                          <button onClick={() => handleAction(app._id, 'rejected')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
-                            <XCircle size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  <AnimatePresence mode='popLayout'>
+                    {currentApps.map((app) => (
+                      <motion.tr
+                        key={app._id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="hover:bg-slate-50/50 transition-colors"
+                      >
+                        <td className="px-6 md:px-10 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{app.name}</span>
+                            <span className="mt-1 text-[11px] text-slate-400 font-medium">{app.studentId}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 md:px-10 py-4 text-center">
+                          <div className="flex justify-center gap-2 items-center">
+                            <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
+                              {app.department}
+                            </span>
+                            <span className="text-slate-400 text-[11px] font-semibold">
+                              {app.yearLevel ? `${ordinals[app.yearLevel]} Year` : 'Pending Level'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 md:px-10 py-4 text-center">
+                          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-600 border-amber-100">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            REVIEW REQUIRED
+                          </div>
+                        </td>
+                        <td className="px-6 md:px-10 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => handleViewDetails(app)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all">
+                              <Eye size={15} />
+                            </button>
+                            <button onClick={() => handleAction(app._id, 'approved')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all">
+                              <UserCheck size={15} />
+                            </button>
+                            <button onClick={() => handleAction(app._id, 'rejected')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
+                              <XCircle size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
