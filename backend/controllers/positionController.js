@@ -116,8 +116,6 @@ export const deletePosition = async (req, res) => {
             return res.status(404).json({ message: "Position not found. It may have been already removed." });
         }
 
-        await Candidate.deleteMany({ position: id });
-
         res.status(200).json({ message: "Position and associated candidates deleted" });
     } catch (error) {
         res.status(500).json({ message: "An error occurred while deleting the position. " + error.message });

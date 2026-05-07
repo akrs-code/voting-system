@@ -110,22 +110,14 @@ export const updateCandidate = async (req, res) => {
 
 export const removeCandidate = async (req, res) => {
     try {
-        const deletedCandidate = await Candidate.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        const deletedCandidate = await Candidate.findByIdAndDelete(id);
 
         if (!deletedCandidate) {
             return res.status(404).json({ message: "The candidate profile you are trying to remove does not exist." });
         }
-        if (deletedCandidate.profilePicture) {
-            try {
-                if (fs.existsSync(deletedCandidate.profilePicture)) {
-                    fs.unlinkSync(deletedCandidate.profilePicture);
-                }
-            } catch (fileError) {
-                console.error("Failed to delete image file:", fileError);
-            }
-        }
 
-        res.json({ message: "Candidate and associated data removed successfully" });
+        res.json({ message: "Candidate profile and all associated votes removed successfully" });
     } catch (error) {
         res.status(500).json({ message: "Error removing candidate from registry: " + error.message });
     }

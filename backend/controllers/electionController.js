@@ -5,7 +5,7 @@ export const createElection = async (req, res) => {
         const { title, startDate, endDate } = req.body;
         const election = await Election.create({ title, startDate, endDate });
 
-        const io = req.app.get('io');
+        const io = req.app.get('socketio');
         if (io) io.emit('election_created', election);
 
         res.status(201).json(election);
@@ -36,7 +36,7 @@ export const updateElection = async (req, res) => {
     try {
         const election = await Election.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
 
-        const io = req.app.get('io');
+        const io = req.app.get('socketio');
         if (io) io.emit('election_updated', election);
 
         res.json(election);
@@ -50,7 +50,7 @@ export const activateElection = async (req, res) => {
         await Election.updateMany({}, { isActive: false });
         const election = await Election.findByIdAndUpdate(req.params.id, { isActive: true }, { returnDocument: 'after' });
 
-        const io = req.app.get('io');
+        const io = req.app.get('socketio');
         if (io) io.emit('election_activated', election._id);
 
         res.json(election);
@@ -67,7 +67,7 @@ export const toggleLockElection = async (req, res) => {
         election.isLocked = !election.isLocked;
         await election.save();
 
-        const io = req.app.get('io');
+        const io = req.app.get('socketio');
         if (io) io.emit('election_updated', election);
 
         res.json({
@@ -83,7 +83,7 @@ export const deleteElection = async (req, res) => {
     try {
         await Election.findByIdAndDelete(req.params.id);
 
-        const io = req.app.get('io');
+        const io = req.app.get('socketio');
         if (io) io.emit('election_deleted', req.params.id);
 
         res.json({ message: "Election cycle has been permanently deleted." });

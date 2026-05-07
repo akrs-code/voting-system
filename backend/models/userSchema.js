@@ -58,4 +58,16 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ department: 1, isVerified: 1 });
 
+userSchema.post('findOneAndDelete', async function (doc) {
+    if (doc) {
+
+        await mongoose.model('Election').updateMany(
+            { eligibleVoters: doc._id },
+            { $pull: { eligibleVoters: doc._id } }
+        );
+
+        await mongoose.model('Ballot').deleteMany({ voter: doc._id });
+    }
+});
+
 export default mongoose.model("User", userSchema);

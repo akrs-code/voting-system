@@ -28,11 +28,11 @@ export const castBallot = async (req, res) => {
 
         if (!user || !election?.isActive) throw new Error("The election is either closed or you are not authorized to vote.");
 
-        if (!election.eligibleVoters.includes(userId)) {
+        if (!election.eligibleVoters.some(voterId => voterId.equals(userId))) {
             throw new Error("You are not registered as an eligible voter for this election.");
         }
 
-        if (user.votedElections.includes(electionId)) throw new Error("You have already cast your vote in this election cycle.");
+        if (user.votedElections.some(eId => eId.equals(electionId))) throw new Error("You have already cast your vote in this election cycle.");
 
         const ballotEntries = [];
         const selectedCandidateIds = [];
@@ -67,7 +67,7 @@ export const castBallot = async (req, res) => {
             candidateName: c.name
         }));
 
-        req.app.get('io')?.emit('newVoteCast', { electionId });
+        req.app.get('socketio')?.emit('newVoteCast', { electionId });
 
         sendVoteEmail(user.email, user.name, election.title, emailVoteSummary).catch(console.error);
 
@@ -185,7 +185,7 @@ export const getBallot = async (req, res) => {
             return res.status(404).json({ message: "No active election found with this ID." });
         }
 
-        if (!election.eligibleVoters.includes(userId)) {
+        if (!election.eligibleVoters.some(voterId => voterId.equals(userId))) {
             return res.status(403).json({ message: "You are not authorized to vote in this election." });
         }
 
