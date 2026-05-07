@@ -93,7 +93,7 @@ const Voters = () => {
     if (!window.confirm("Are you sure you want to permanently delete this student record?")) return;
     try {
       await voterService.delete(id);
-      setVoters(prev => prev.filter(item => item._id !== id));
+      await fetchVoters();
       toast.success("Student record deleted successfully.");
     } catch (error) {
       toast.error("Delete failed. Please try again.");
@@ -103,7 +103,7 @@ const Voters = () => {
   const filteredVoters = useMemo(() => {
     return voters.filter(v => {
       const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.studentId.includes(searchQuery);
+        (v.studentId || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' ? true :
         statusFilter === 'voted' ? v.hasVoted : !v.hasVoted;
       const matchesYear = yearFilter === 'all' ? true : v.yearLevel === parseInt(yearFilter);
@@ -157,7 +157,7 @@ const Voters = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Search students..."
+            placeholder="Search by name or ID..."
             className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

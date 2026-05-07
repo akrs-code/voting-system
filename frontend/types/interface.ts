@@ -40,15 +40,10 @@ export interface Voter {
   yearLevel: number;
   email: string;
   hasVoted: boolean;
+  voteCount?: number;
 }
 
-export interface Election {
-  _id: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-}
+
 
 export interface Candidate {
   _id: string;

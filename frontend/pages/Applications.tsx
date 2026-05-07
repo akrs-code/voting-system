@@ -79,7 +79,7 @@ const Applications = () => {
     try {
       setIsProcessing(true);
       await authService.manageApplication(id, action);
-      setApplications(prev => prev.filter(app => app._id !== id));
+      await fetchApplications();
       setShowViewModal(false);
       toast.success(`Application ${action === 'approved' ? 'approved' : 'rejected'} successfully.`);
     } catch (error: any) {
@@ -98,7 +98,7 @@ const Applications = () => {
   const filteredApps = useMemo(() => {
     return applications.filter(app => {
       const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.studentId.includes(searchQuery);
+        (app.studentId || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDept = deptFilter === 'ALL' ? true : app.department === deptFilter;
       const matchesYear = yearFilter === 'all' ? true : app.yearLevel === parseInt(yearFilter);
       return matchesSearch && matchesDept && matchesYear;
@@ -106,6 +106,13 @@ const Applications = () => {
   }, [applications, searchQuery, deptFilter, yearFilter]);
 
   const totalPages = Math.max(Math.ceil(filteredApps.length / itemsPerPage), 1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const currentApps = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredApps.slice(startIndex, startIndex + itemsPerPage);
@@ -132,7 +139,7 @@ const Applications = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Search applicants by name or ID..."
+            placeholder="Search by name or ID..."
             className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-semibold shadow-sm placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

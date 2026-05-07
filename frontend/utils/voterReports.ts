@@ -59,6 +59,7 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
       "Email": v.email,
       "Department": v.department,
       "Year Level": `${ordinals[v.yearLevel]} Year`,
+      "Candidates Voted": v.voteCount || 0,
       "Status": v.hasVoted ? "✓ COMPLETED" : "⏳ PENDING"
     }));
   };
@@ -77,6 +78,7 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
     { wch: 35 }, 
     { wch: 12 }, 
     { wch: 12 }, 
+    { wch: 18 }, 
     { wch: 15 }, 
   ];
 

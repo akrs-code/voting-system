@@ -50,7 +50,7 @@ const VoterSelectionModal = ({ electionId, electionTitle, onClose }: Props) => {
   const filteredVoters = useMemo(() => {
     return allVoters.filter(v => {
       const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.studentId.includes(searchQuery);
+        (v.studentId || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDept = deptFilter === 'ALL' || v.department === deptFilter;
       const matchesYear = yearFilter === 'all' || v.yearLevel === parseInt(yearFilter);
       return matchesSearch && matchesDept && matchesYear;
