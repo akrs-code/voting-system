@@ -72,12 +72,12 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
   const wsDIS = XLSX.utils.json_to_sheet(mapVoterData(disVoters));
 
   const colWidths = [
-    { wch: 15 }, // Student ID
-    { wch: 25 }, // Full Name
-    { wch: 35 }, // Email
-    { wch: 12 }, // Department
-    { wch: 12 }, // Year Level
-    { wch: 15 }, // Status
+    { wch: 15 }, 
+    { wch: 25 }, 
+    { wch: 35 }, 
+    { wch: 12 }, 
+    { wch: 12 }, 
+    { wch: 15 }, 
   ];
 
   const summaryColWidths = [

@@ -215,27 +215,27 @@ export const generateExcelReport = (
   applyWinnersStyle(wsWinners);
 
   const colWidths = [
-    { wch: 25 }, // Position
-    { wch: 18 }, // Scope
-    { wch: 30 }, // Candidate/Winner Name
-    { wch: 12 }, // Votes
-    { wch: 20 }, // Percentage
-    { wch: 10 }, // Ranking
-    { wch: 15 }  // Status
+    { wch: 25 }, 
+    { wch: 18 }, 
+    { wch: 30 }, 
+    { wch: 12 }, 
+    { wch: 20 }, 
+    { wch: 10 }, 
+    { wch: 15 }  
   ];
 
   const overviewColWidths = [
-    { wch: 30 }, // Label
-    { wch: 40 }  // Value
+    { wch: 30 }, 
+    { wch: 40 }  
   ];
 
   const winnersColWidths = [
-    { wch: 25 }, // Position
-    { wch: 18 }, // Scope
-    { wch: 30 }, // Winner Name
-    { wch: 12 }, // Total Votes
-    { wch: 20 }, // Winning Percentage
-    { wch: 15 }  // Status
+    { wch: 25 }, 
+    { wch: 18 }, 
+    { wch: 30 }, 
+    { wch: 12 }, 
+    { wch: 20 }, 
+    { wch: 15 }  
   ];
 
   wsOverview['!cols'] = overviewColWidths;
