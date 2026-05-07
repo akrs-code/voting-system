@@ -15,12 +15,35 @@ import Positions from "../pages/Position";
 import Applications from "../pages/Applications";
 import SignupApplication from "../pages/SignupApplication";
 
+import { Toaster } from "react-hot-toast";
+
 function App() {
   const { user, loading } = useAuth();
   if (loading) return null;
 
   return (
     <BrowserRouter>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            borderRadius: '1rem',
+            background: '#fff',
+            color: '#334155',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #f1f5f9',
+            padding: '12px 16px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#2f318d',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
