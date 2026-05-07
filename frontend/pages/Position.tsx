@@ -9,7 +9,6 @@ import {
   AlertCircle,
   Briefcase,
   Search,
-  SlidersHorizontal
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -17,7 +16,7 @@ import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
 import CustomDropdown from '../components/CustomDropdown';
 import { Position } from 'types/interface';
-import { GraduationCap, Building2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Positions = () => {

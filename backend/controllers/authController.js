@@ -1,7 +1,6 @@
 import User from "../models/userSchema.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import Election from "../models/electionSchema.js";
 import { sendStatusEmail } from "../utils/emailHelper.js";
 import { handleMongoError } from "../utils/errorHandler.js";

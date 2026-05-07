@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { X, Search, CheckCircle2, Loader2, Users, SlidersHorizontal, UserPlus, CheckSquare, Square, MinusSquare } from 'lucide-react';
+import { X, Search, CheckCircle2, Loader2, Users, CheckSquare, Square, MinusSquare } from 'lucide-react';
 import { voterService } from '../services/voterService';
 import { electionService } from '../services/electionService';
 import { Voter } from '../types/interface';

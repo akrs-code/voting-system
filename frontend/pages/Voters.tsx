@@ -8,7 +8,6 @@ import {
   Edit3,
   CheckCircle2,
   AlertCircle,
-  SlidersHorizontal,
   FileSpreadsheet,
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -18,7 +17,7 @@ import Pagination from '../components/Pagination';
 import CustomDropdown from '../components/CustomDropdown';
 import { Voter } from 'types/interface';
 import { VoterReports } from "../utils/voterReports"
-import { GraduationCap, CheckCircle2 as CheckIcon, Filter } from 'lucide-react';
+import { CheckCircle2 as CheckIcon, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Voters = () => {
@@ -32,7 +31,6 @@ const Voters = () => {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
-  const ordinals = ["", "1st", "2nd", "3rd", "4th"];
 
   const validationSchema = Yup.object({
     name: Yup.string()
@@ -191,7 +189,6 @@ const Voters = () => {
             ]}
             value={yearFilter}
             onChange={setYearFilter}
-            icon={<GraduationCap size={18} />}
             placeholder="Year Level"
           />
         </div>

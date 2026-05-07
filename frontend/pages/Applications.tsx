@@ -8,7 +8,6 @@ import {
   Eye,
   X,
   AlertCircle,
-  GraduationCap,
   Building2
 } from 'lucide-react';
 import { authService } from '../services/authService';
@@ -53,7 +52,7 @@ const Applications = () => {
 
     socket.on('newApplication', (newApp: User) => {
       setApplications(prev => {
-        
+
         if (prev.find(app => app._id === newApp._id)) return prev;
         return [newApp, ...prev];
       });
@@ -165,7 +164,6 @@ const Applications = () => {
             ]}
             value={yearFilter}
             onChange={setYearFilter}
-            icon={<GraduationCap size={18} />}
             placeholder="Year Level"
           />
         </div>

@@ -6,7 +6,6 @@ import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { authService } from "../services/authService";
 import CustomDropdown from "../components/CustomDropdown";
 import { User } from "../types/interface";
-import { GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function SignupApplication() {
@@ -153,7 +152,6 @@ export default function SignupApplication() {
                   value={values.yearLevel.toString()}
                   onChange={(val) => setFieldValue('yearLevel', val ? parseInt(val) : "")}
                   placeholder="Select Year"
-                  icon={<GraduationCap size={18} />}
                 />
                 <ErrorMessage name="yearLevel" component="p" className="text-[10px] text-red-500 font-medium ml-1" />
               </div>

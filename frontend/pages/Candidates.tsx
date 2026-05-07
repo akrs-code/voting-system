@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   Plus, Loader2, Trash2, X, Edit3, CheckCircle2, AlertCircle,
-  Search, Building2, Briefcase, Camera, ChevronDown,
+  Search, Building2, Briefcase, Camera,
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from 'formik';
 import * as Yup from 'yup';
@@ -385,9 +385,9 @@ const Candidates = () => {
                       <label className="text-xs md:text-sm font-semibold text-slate-700">Position Title</label>
                       <CustomDropdown
                         options={[
-                          { 
-                            label: !values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position...", 
-                            value: "" 
+                          {
+                            label: !values.electionId ? "Select Election first..." : modalPositions.length === 0 ? "No positions found" : "Select Official Position...",
+                            value: ""
                           },
                           ...modalPositions.map(pos => ({ label: pos.name, value: pos._id }))
                         ]}
