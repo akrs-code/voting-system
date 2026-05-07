@@ -17,7 +17,7 @@ import Pagination from '../components/Pagination';
 import CustomDropdown from '../components/CustomDropdown';
 import { Voter } from 'types/interface';
 import { VoterReports } from "../utils/voterReports"
-import { CheckCircle2 as CheckIcon, Filter } from 'lucide-react';
+import { CheckCircle2 as CheckIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Voters = () => {

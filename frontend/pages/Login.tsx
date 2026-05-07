@@ -34,7 +34,7 @@ export default function Login() {
               navigate("/dashboard/voter");
             }
           } catch (err: any) {
-            const errorMsg = err.response?.data?.message || err.message || "Invalid credentials. Please try again.";
+            const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Invalid credentials. Please try again.";
             setStatus(errorMsg);
           } finally {
             setSubmitting(false);
