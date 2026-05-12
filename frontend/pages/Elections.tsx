@@ -146,44 +146,44 @@ const Elections = () => {
                       </div>
                     </td>
                     <td className="px-6 md:px-10 py-4 text-right">
-                      <div className="flex justify-end items-center gap-3">
-
-                        <div className="h-8 w-px bg-slate-100 mx-1" />
-
+                      <div className="flex justify-end items-center gap-2.5">
                         <button
                           disabled={processingId === election._id}
                           onClick={() => handleToggleActive(election._id, election.isActive)}
-                          className={`relative w-11 h-6 flex items-center rounded-full px-1 transition-all duration-300 ${election.isActive ? 'bg-[#2f318d]' : 'bg-slate-200'
-                            } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}`}
+                          title={election.isActive ? "Deactivate Election" : "Activate Election"}
+                          className={`relative w-11 h-6 flex items-center rounded-full px-1 transition-all duration-300 shadow-sm ${election.isActive ? 'bg-[#2f318d]' : 'bg-slate-200'
+                            } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md active:scale-95'}`}
                         >
                           <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-300 ${election.isActive ? 'translate-x-5' : 'translate-x-0'
                             }`} />
                         </button>
 
                         <div className="h-8 w-px bg-slate-100 mx-1" />
+
                         <button
                           onClick={() => setVoterModalData({ id: election._id, title: election.title })}
-                          className="p-2 bg-indigo-50 text-[#2f318d] hover:bg-[#2f318d] hover:text-white rounded-xl transition-all border border-indigo-100"
+                          className="p-2.5 bg-indigo-50 text-[#2f318d] hover:bg-[#2f318d] hover:text-white rounded-xl transition-all border border-indigo-100 shadow-sm active:scale-95"
                           title="Manage Voters"
                         >
-                          <Users size={16} />
+                          <Users size={18} />
                         </button>
                         <button
                           disabled={processingId === election._id}
                           onClick={() => handleToggleLock(election._id, election.isLocked)}
-                          className={`p-2 rounded-xl transition-all ${election.isLocked
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                          className={`p-2.5 rounded-xl transition-all shadow-sm active:scale-95 ${election.isLocked
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100'
                             : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                             } ${processingId === election._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title={election.isLocked ? "Unlock Election" : "Lock Election"}
                         >
-                          {election.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                          {election.isLocked ? <Lock size={18} /> : <Unlock size={18} />}
                         </button>
                         <button
                           onClick={() => handleDelete(election._id)}
-                          className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                          title="Delete Election"
+                          className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>

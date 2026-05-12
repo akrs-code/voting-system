@@ -134,19 +134,19 @@ const Applications = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="relative group sm:col-span-2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2f318d] transition-colors" size={18} />
           <input
             type="text"
             placeholder="Search by name or ID..."
-            className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-semibold shadow-sm placeholder:text-slate-400"
+            className="w-full h-12 pl-12 pr-6 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2f318d] transition-all text-sm font-medium shadow-sm placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="lg:col-span-1.5">
+        <div className="lg:col-span-1">
           <CustomDropdown
             options={[
               { label: 'All Departments', value: 'ALL' },
@@ -160,7 +160,7 @@ const Applications = () => {
           />
         </div>
 
-        <div className="lg:col-span-1.5">
+        <div className="lg:col-span-1">
           <CustomDropdown
             options={[
               { label: 'All Year Levels', value: 'all' },
@@ -232,15 +232,27 @@ const Applications = () => {
                           </div>
                         </td>
                         <td className="px-6 md:px-10 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => handleViewDetails(app)} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all">
-                              <Eye size={15} />
+                          <div className="flex justify-end gap-2.5">
+                            <button
+                              onClick={() => handleViewDetails(app)}
+                              title="View Details"
+                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                            >
+                              <Eye size={18} />
                             </button>
-                            <button onClick={() => handleAction(app._id, 'approved')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all">
-                              <UserCheck size={15} />
+                            <button
+                              onClick={() => handleAction(app._id, 'approved')}
+                              title="Approve Applicant"
+                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                            >
+                              <UserCheck size={18} />
                             </button>
-                            <button onClick={() => handleAction(app._id, 'rejected')} className="p-2 md:p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
-                              <XCircle size={15} />
+                            <button
+                              onClick={() => handleAction(app._id, 'rejected')}
+                              title="Reject Applicant"
+                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                            >
+                              <XCircle size={18} />
                             </button>
                           </div>
                         </td>
