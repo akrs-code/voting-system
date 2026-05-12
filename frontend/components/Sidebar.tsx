@@ -40,10 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
 
   return (
     <aside className="flex flex-col w-full h-full text-white font-poppins">
-      <div className="p-8 flex items-center justify-between">
-        <h2 className="text-[0.9rem] font-semibold tracking-[0.2em] uppercase">
-          Menu
-        </h2>
+      <div className="py-4 px-8s flex items-center justify-between">
         <button onClick={onClose} className="lg:hidden p-1 text-slate-400 hover:text-white">
           <X size={20} />
         </button>
