@@ -17,6 +17,7 @@ const VoterDashboard = () => {
   const [hasVoted, setHasVoted] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [showReview, setShowReview] = useState(false);
+  const [showAbstainWarning, setShowAbstainWarning] = useState(false);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -262,7 +263,13 @@ const VoterDashboard = () => {
           </div>
 
           <button
-            onClick={() => setShowReview(true)}
+            onClick={() => {
+              if (filledCount < positions.length) {
+                setShowAbstainWarning(true);
+              } else {
+                setShowReview(true);
+              }
+            }}
             disabled={filledCount === 0}
             className={`h-10 md:h-14 px-5 md:px-8 rounded-2xl md:rounded-[1.25rem] text-xs md:text-sm font-bold transition-all flex items-center gap-2 md:gap-2.5 active:scale-[0.98] ${filledCount > 0
               ? "bg-[#2f318d] text-white shadow-lg shadow-indigo-900/20 hover:bg-[#26287a]"
@@ -275,6 +282,40 @@ const VoterDashboard = () => {
         </div>
       </div>
 
+      {showAbstainWarning && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-6 shadow-inner relative overflow-hidden">
+              <div className="absolute inset-0 bg-amber-400 opacity-10 animate-pulse" />
+              <AlertCircle size={40} strokeWidth={2.5} />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Abstain Reminder</h2>
+            <p className="text-slate-500 text-sm mt-4 leading-relaxed">
+              You haven't selected candidates for <span className="font-bold text-[#2f318d]">{positions.length - filledCount}</span> position(s). 
+              These will be recorded as <span className="font-bold text-amber-600">Abstain</span>.
+            </p>
+            
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowAbstainWarning(false);
+                  setShowReview(true);
+                }}
+                className="w-full h-14 bg-[#2f318d] text-white rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] transition-all active:scale-[0.98]"
+              >
+                Proceed to Review
+              </button>
+              <button
+                onClick={() => setShowAbstainWarning(false)}
+                className="w-full h-14 bg-slate-50 text-slate-500 rounded-2xl font-bold hover:bg-slate-100 transition-all border border-slate-100"
+              >
+                Go Back to Ballot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showReview && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl bg-white rounded-3xl md:rounded-[2.5rem] shadow-2xl relative max-h-[90vh] md:max-h-[95vh] flex flex-col overflow-hidden">
@@ -289,15 +330,6 @@ const VoterDashboard = () => {
             </div>
 
             <div className="p-5 md:p-8 overflow-y-auto flex-1 bg-slate-50/50">
-              {filledCount < positions.length && (
-                <div className="mb-5 md:mb-6 p-3 md:p-4 bg-amber-50 border border-amber-100 rounded-xl md:rounded-2xl flex gap-3 items-start">
-                  <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={16} />
-                  <p className="text-[11px] md:text-sm text-red-700 font-medium leading-relaxed">
-                    You have left some positions blank. These will be counted as abstain.
-                  </p>
-                </div>
-              )}
-
               <div className="space-y-2.5 md:space-y-4">
                 {positions.map((pos) => {
                   const selected = selectedVotes[pos.positionId] || [];
