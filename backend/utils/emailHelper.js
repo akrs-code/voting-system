@@ -4,6 +4,10 @@ import path from 'path';
 
 dotenv.config();
 
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587'),
@@ -12,129 +16,297 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-    tls: {
-        rejectUnauthorized: false
-    },
+    tls: { rejectUnauthorized: false },
     pool: true,
     maxConnections: 5,
     maxMessages: 100
 });
 
-transporter.verify((error, success) => {
+transporter.verify((error) => {
     if (error) {
-        console.error('SMTP Connection Error:', error);
+        console.error('SMTP Connection Error:', {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+        });
     } else {
         console.log('SMTP Server is ready to take our messages');
     }
 });
 
-const logoPath = path.join(process.cwd(), 'public', 'cics.png');
-
-const s = {
-    body: "background-color: #f8fafc; padding: 48px 20px; font-family: 'Poppins', 'Inter', Arial, sans-serif; color: #1e1b4b; line-height: 1.5;",
-    header: "text-align: center; margin-bottom: 32px;",
-    badge: "font-size: 11px; font-weight: 800; color: #2f318d; text-transform: uppercase; letter-spacing: 0.15em; display: block; margin-bottom: 8px; opacity: 0.8;",
-    card: "background: #ffffff; border-radius: 40px; padding: 40px; border: 1px solid #e2e8f0; max-width: 520px; margin: 0 auto; box-shadow: 0 20px 40px rgba(47, 49, 141, 0.05);",
-    cardDanger: "background: #ffffff; border-radius: 40px; padding: 40px; border: 1px solid #fee2e2; max-width: 520px; margin: 0 auto; box-shadow: 0 20px 40px rgba(220, 38, 38, 0.05);",
-    iconBox: (bg, color) => `width: 64px; height: 64px; line-height: 64px; border-radius: 22px; background: ${bg}; color: ${color}; text-align: center; font-size: 28px; margin: 0 auto 24px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);`,
-    cardTitle: "font-size: 22px; font-weight: 800; color: #1e293b; text-align: center; margin: 0 0 8px; letter-spacing: -0.02em;",
-    cardSub: "font-size: 15px; color: #64748b; text-align: center; line-height: 1.6; margin: 0;",
-    sectionLbl: "font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 32px 0 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; text-align: center;",
-    voteRow: "background: #ffffff; padding: 18px 24px; border-radius: 20px; margin-bottom: 12px; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.01);",
-    votePos: "font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 4px; text-align: left;",
-    voteName: "font-size: 16px; font-weight: 800; color: #2f318d; margin: 0; text-align: left;",
-    noticeBox: "background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; padding: 20px 24px; text-align: center; margin-top: 32px;",
-    noticeText: "font-size: 13px; color: #64748b; line-height: 1.6; margin: 0;",
-    dangerBox: "background: #fff1f2; border: 1px solid #fecaca; border-radius: 24px; padding: 24px; text-align: center; margin-top: 32px;",
-    ctaBtn: "display: inline-block; background: #2f318d; color: #ffffff; padding: 18px 36px; border-radius: 20px; text-decoration: none; font-size: 15px; font-weight: 800; margin-top: 32px; box-shadow: 0 10px 20px rgba(47, 49, 141, 0.2);",
-    footer: "text-align: center; margin-top: 32px; font-size: 11px; color: #94a3b8; font-weight: 600; letter-spacing: 0.02em;",
-};
-
-const logoImg = `<img src="cid:cics-logo" alt="CICS Logo" style="height: 80px; width: 80px; border-radius: 24px; margin: 0 auto 16px; display: block; box-shadow: 0 8px 16px rgba(47, 49, 141, 0.08);">`;
+const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
 const attachment = [{ filename: 'cics.png', path: logoPath, cid: 'cics-logo' }];
-const footerHtml = `<p style="${s.footer}">© 2026 MSU College of Information and Computing Sciences</p>`;
 
+// ─── Shared base shell ─────────────────────────────────────────────────────────
+const shell = (bodyContent) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSU CICS</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:'Poppins','Inter',Arial,sans-serif;color:#1e1b4b;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+    style="background-color:#f8fafc;padding:48px 20px;">
+    <tr><td align="center">
+
+      <!-- Logo + institution label -->
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+        style="max-width:520px;margin-bottom:28px;">
+        <tr>
+          <td align="center">
+            <img src="cid:cics-logo" alt="CICS Logo" width="80" height="80"
+              style="border-radius:24px;display:block;margin:0 auto 14px;
+                     box-shadow:0 8px 24px rgba(47,49,141,0.12);" />
+            <p style="margin:0;font-size:11px;font-weight:800;color:#2f318d;
+                      text-transform:uppercase;letter-spacing:0.15em;opacity:0.8;">
+              CICS E-Voting System
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Main card -->
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+        style="max-width:520px;background:#ffffff;border-radius:40px;
+               border:1px solid #e2e8f0;
+               box-shadow:0 20px 40px rgba(47,49,141,0.06);">
+
+        <!-- Top accent stripe -->
+        <tr>
+          <td style="height:5px;background:linear-gradient(90deg,#2f318d,#4f52c8,#2f318d);
+                     border-radius:40px 40px 0 0;"></td>
+        </tr>
+
+        ${bodyContent}
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:0 40px 36px;" align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+              <tr>
+                <td style="border-top:1px solid #f1f5f9;padding-top:24px;" align="center">
+                  <p style="margin:0;font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:0.04em;">
+                    © 2026 MSU College of Information and Computing Sciences
+                  </p>
+                  <p style="margin:6px 0 0;font-size:11px;color:#cbd5e1;letter-spacing:0.02em;">
+                    This is an automated message — please do not reply.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+
+</body>
+</html>`;
+
+// ─── Vote confirmation email ───────────────────────────────────────────────────
 export const sendVoteEmail = async (userEmail, userName, electionName, votes) => {
-    const voteRows = votes.map(v => `
-        <div style="${s.voteRow}">
-            <p style="${s.votePos}">${v.positionName}</p>
-            <p style="${s.voteName}">${v.candidateName}</p>
-        </div>
+
+    const voteRows = votes.map((v) => `
+        <tr>
+          <td style="padding-bottom:10px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+              style="background:#ffffff;border:1px solid #e8eaf6;border-radius:20px;
+                     box-shadow:0 2px 8px rgba(47,49,141,0.04);">
+              <tr>
+                <td width="4"
+                  style="background:linear-gradient(180deg,#2f318d,#4f52c8);
+                         border-radius:20px 0 0 20px;"></td>
+                <td style="padding:14px 20px;">
+                  <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:#94a3b8;
+                            text-transform:uppercase;letter-spacing:0.12em;">${v.positionName}</p>
+                  <p style="margin:0;font-size:16px;font-weight:800;color:#2f318d;
+                            letter-spacing:-0.01em;">${v.candidateName}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
     `).join('');
 
-    const html = `
-    <div style="${s.body}">
-        <div style="${s.header}">
-            ${logoImg}
-            <span style="${s.badge}">Institutional Election Portal</span>
-            <h1 style="font-size: 32px; font-weight: 900; color: #1e293b; margin: 0; letter-spacing: -0.04em;">
-                Ballot <span style="color: #2f318d;">Receipt</span>
-            </h1>
-        </div>
-        <div style="${s.card}">
-            <div style="${s.iconBox('#dcfce7', '#16a34a')}">✓</div>
-            <p style="${s.cardTitle}">Hi ${userName},</p>
-            <p style="${s.cardSub}">Your ballot for <b>${electionName}</b> has been securely recorded.</p>
-            <p style="${s.sectionLbl}">Your Votes</p>
-            ${voteRows}
-            <div style="${s.noticeBox}">
-                <p style="${s.noticeText}">
-                    This serves as your <b>official cryptographic receipt</b>.
-                    Your vote remains anonymous and encrypted.
-                </p>
-            </div>
-        </div>
-        ${footerHtml}
-    </div>`;
+    const bodyContent = `
+        <tr>
+          <td style="padding:36px 40px 0;">
+
+            <!-- Icon + heading row -->
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+              <tr>
+                <td width="52" height="52"
+                  style="background:#dcfce7;border-radius:16px;text-align:center;
+                         line-height:52px;font-size:22px;">✓</td>
+                <td style="padding-left:14px;">
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                            letter-spacing:-0.02em;">Ballot Confirmed</p>
+                  <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${electionName}</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
+              Hi <strong style="color:#1e293b;">${userName}</strong>, your ballot has been
+              <strong style="color:#2f318d;">securely recorded</strong>. This email serves as
+              your official cryptographic receipt.
+            </p>
+
+            <p style="margin:0 0 12px;font-size:11px;font-weight:800;color:#94a3b8;
+                      text-transform:uppercase;letter-spacing:0.12em;
+                      border-bottom:1px solid #f1f5f9;padding-bottom:10px;">
+              Your Selections
+            </p>
+
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 40px 28px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+              ${voteRows}
+            </table>
+          </td>
+        </tr>
+
+        <!-- Privacy notice -->
+        <tr>
+          <td style="padding:0 40px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
+              <tr>
+                <td style="padding:18px 22px;text-align:center;">
+                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+                    Your vote is <strong style="color:#475569;">anonymous and encrypted</strong>.
+                    Individual selections cannot be traced back to you.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+    `;
 
     return transporter.sendMail({
         from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
         to: userEmail,
         subject: `Ballot Receipt: ${electionName}`,
-        html,
+        html: shell(bodyContent),
         attachments: attachment,
     });
 };
 
+// ─── Approval / rejection status email ────────────────────────────────────────
 export const sendStatusEmail = async (userEmail, userName, action) => {
     const isApproved = action === 'approved';
     const loginUrl = 'https://cicsvotingsystem.vercel.app/login';
 
-    const html = `
-    <div style="${s.body}">
-        <div style="${s.header}">
-            ${logoImg}
-            <span style="${s.badge}">Membership Gatekeeper</span>
-        </div>
-        <div style="${isApproved ? s.card : s.cardDanger}">
-            <div style="${s.iconBox(
-        isApproved ? '#eef2ff' : '#fee2e2',
-        isApproved ? '#2f318d' : '#dc2626'
-    )}">${isApproved ? '👤' : '✕'}</div>
-            <p style="${s.cardTitle}">Hi ${userName},</p>
-            <p style="${s.cardSub}">
-                ${isApproved
-            ? 'Great news! Your registration for the <b>MSU CICS Election Portal</b> has been approved. You are now authorized to vote.'
-            : 'Your registration was <b>not approved</b>. To maintain system integrity, your application data has been removed.'}
+    const bodyContent = isApproved ? `
+        <tr>
+          <td style="padding:36px 40px 0;">
+
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+              <tr>
+                <td width="52" height="52"
+                  style="background:#eef2ff;border-radius:16px;text-align:center;
+                         line-height:52px;font-size:22px;">👤</td>
+                <td style="padding-left:14px;">
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                            letter-spacing:-0.02em;">Application Approved</p>
+                  <p style="margin:2px 0 0;font-size:13px;color:#64748b;">MSU CICS Election Portal</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
+              Hi <strong style="color:#1e293b;">${userName}</strong>, great news! Your registration
+              has been <strong style="color:#2f318d;">approved</strong>. You are now authorized to
+              vote. Please follow the instructions in the dashboard to cast your ballot.
             </p>
-            ${isApproved ? `
-                <div style="text-align: center;">
-                    <a href="${loginUrl}" style="${s.ctaBtn}">
-                        Access voter dashboard
-                    </a>
-                </div>
-            ` : `
-                <div style="${s.dangerBox}">
-                    <p style="font-size: 13px; font-weight: 700; color: #991b1b; margin: 0 0 8px;">Verification failed</p>
-                    <p style="font-size: 12px; color: #b91c1c; line-height: 1.6; margin: 0;">
-                        Please ensure your <b>Student ID</b> and <b>Department</b> perfectly match
-                        your institutional records before trying again.
-                    </p>
-                </div>
-            `}
-        </div>
-        ${footerHtml}
-    </div>`;
+
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 40px 28px;" align="center">
+            <a href="${loginUrl}"
+              style="display:inline-block;background:#2f318d;color:#ffffff;
+                     padding:16px 40px;border-radius:20px;text-decoration:none;
+                     font-size:15px;font-weight:800;letter-spacing:0.02em;
+                     box-shadow:0 10px 24px rgba(47,49,141,0.22);">
+              Access Voter Dashboard →
+            </a>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 40px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
+              <tr>
+                <td style="padding:18px 22px;text-align:center;">
+                  <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+                    Ballots are <strong style="color:#475569;">final and cannot be changed</strong>
+                    once submitted. Review all instructions carefully before voting.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+    ` : `
+        <tr>
+          <td style="padding:36px 40px 0;">
+
+            <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+              <tr>
+                <td width="52" height="52"
+                  style="background:#fee2e2;border-radius:16px;text-align:center;
+                         line-height:52px;font-size:20px;font-weight:800;color:#dc2626;">✕</td>
+                <td style="padding-left:14px;">
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                            letter-spacing:-0.02em;">Application Not Approved</p>
+                  <p style="margin:2px 0 0;font-size:13px;color:#64748b;">MSU CICS Election Portal</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
+              Hi <strong style="color:#1e293b;">${userName}</strong>, your registration was
+              <strong style="color:#dc2626;">not approved</strong>. To maintain system integrity,
+              your application data has been removed from our temporary registry.
+            </p>
+
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 40px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+              style="background:#fff1f2;border:1px solid #fecaca;border-radius:24px;">
+              <tr>
+                <td style="padding:22px 24px;">
+                  <p style="margin:0 0 12px;font-size:11px;font-weight:800;color:#991b1b;
+                            text-transform:uppercase;letter-spacing:0.1em;">Important Notice</p>
+                  <p style="margin:0 0 8px;font-size:13px;color:#b91c1c;line-height:1.65;">
+                    · You <strong>must enter your proper institutional credentials</strong> to register.
+                  </p>
+                  <p style="margin:0 0 8px;font-size:13px;color:#b91c1c;line-height:1.65;">
+                    · Strictly <strong>follow the registration instructions</strong> provided in the portal.
+                  </p>
+                  <p style="margin:0;font-size:13px;color:#b91c1c;line-height:1.65;">
+                    · Contact your administrator if you believe this is an error.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+    `;
 
     return transporter.sendMail({
         from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
@@ -142,7 +314,7 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         subject: isApproved
             ? 'Application Approved – MSU CICS'
             : 'Application Status Update – MSU CICS',
-        html,
+        html: shell(bodyContent),
         attachments: attachment,
     });
 };

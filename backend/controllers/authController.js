@@ -322,7 +322,7 @@ export const manageApplication = async (req, res) => {
                 console.error("Approval Email Error:", err)
             );
 
-            return res.json({ message: "User approved successfully." });
+            return res.json({ message: "User approved successfully. Email notification sent." });
         }
 
         if (status === "rejected") {
@@ -339,7 +339,7 @@ export const manageApplication = async (req, res) => {
                 console.error("Rejection Email Error:", err)
             );
 
-            return res.json({ message: "Application rejected and removed." });
+            return res.json({ message: "Application rejected and removed. Notification sent." });
         }
 
         res.status(400).json({ message: "Invalid status" });

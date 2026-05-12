@@ -69,7 +69,9 @@ export const castBallot = async (req, res) => {
 
         req.app.get('socketio')?.emit('newVoteCast', { electionId });
 
-        sendVoteEmail(user.email, user.name, election.title, emailVoteSummary).catch(console.error);
+        await sendVoteEmail(user.email, user.name, election.title, emailVoteSummary).catch(err => {
+            console.error("Vote Receipt Email Error:", err);
+        });
 
     } catch (error) {
         if (session.inTransaction()) await session.abortTransaction();
