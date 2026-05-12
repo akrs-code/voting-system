@@ -6,6 +6,7 @@ import {
   Loader2, Check, User, Eye, ArrowRight, X,
   CheckCircle2, ShieldCheck, AlertCircle
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const VoterDashboard = () => {
   const { user } = useAuth();
@@ -96,7 +97,7 @@ const VoterDashboard = () => {
       setHasVoted(true);
       setShowReview(false);
     } catch (error: any) {
-      alert(error.response?.data?.error || "Submission failed");
+      toast.error(error.response?.data?.error || "Submission failed");
     } finally {
       setSubmitting(false);
     }
@@ -289,13 +290,13 @@ const VoterDashboard = () => {
               <div className="absolute inset-0 bg-amber-400 opacity-10 animate-pulse" />
               <AlertCircle size={40} strokeWidth={2.5} />
             </div>
-            
+
             <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Abstain Reminder</h2>
             <p className="text-slate-500 text-sm mt-4 leading-relaxed">
-              You haven't selected candidates for <span className="font-bold text-[#2f318d]">{positions.length - filledCount}</span> position(s). 
+              You haven't selected candidates for <span className="font-bold text-[#2f318d]">{positions.length - filledCount}</span> position(s).
               These will be recorded as <span className="font-bold text-amber-600">Abstain</span>.
             </p>
-            
+
             <div className="mt-8 flex flex-col gap-3">
               <button
                 onClick={() => {
