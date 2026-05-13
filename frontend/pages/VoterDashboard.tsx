@@ -213,11 +213,16 @@ const VoterDashboard = () => {
       setHasVoted(true);
       setShowReview(false);
 
-      try {
-        await generateVoteReceipt(rData);
-        toast.success("Vote receipt downloaded!");
-      } catch (err) {
-        console.error("Auto-download failed:", err);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (!isMobile) {
+        try {
+          await generateVoteReceipt(rData);
+          toast.success("Vote receipt downloaded!");
+        } catch (err) {
+          console.error("Auto-download failed:", err);
+        }
+      } else {
+        toast.success("Vote cast! Click the button below to download your receipt.", { duration: 5000 });
       }
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Submission failed");

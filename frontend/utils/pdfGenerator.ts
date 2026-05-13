@@ -134,7 +134,32 @@ export const generateVoteReceipt = async (data: {
     doc.text('© 2026 MSU College of Information and Computing Sciences — E-Voting System', 105, finalY + 45, { align: 'center' });
 
     const safeTitle = data.electionTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    doc.save(`Receipt_${safeTitle}.pdf`);
+    const fileName = `Receipt_${safeTitle}.pdf`;
+
+    // More robust download for mobile compatibility
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Mobile browsers handle window.open/location better for blobs
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Fallback if popup is blocked
+        window.location.href = url;
+      }
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
 
   } catch (error) {
     console.error('PDF Generation failed:', error);
