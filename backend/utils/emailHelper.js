@@ -1,5 +1,4 @@
-import nodemailer from 'nodemailer';
-import dns from 'dns';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -10,28 +9,22 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Force IPv4 DNS resolution to avoid ENETUNREACH on IPv6 addresses
-const ipv4Lookup = (hostname, options, callback) => {
-  dns.lookup(hostname, { family: 4 }, callback);
-};
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // use STARTTLS
-  family: 4, // Force IPv4
-  auth: {
-    user: process.env.EMAIL_USER || process.env.SMTP_USER,
-    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS // Use Gmail App Password
-  },
-  // Optional timeout settings to avoid indefinite hangs
-  connectionTimeout: 20000, // 20 s
-  greetingTimeout: 5000,
-  // Use custom DNS lookup to prefer IPv4
-  lookup: ipv4Lookup,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
+
+// Read logo as base64 for inline embedding
+const logoBase64 = (() => {
+  try {
+    return fs.readFileSync(logoPath).toString('base64');
+  } catch {
+    return null;
+  }
+})();
+
+const logoSrc = logoBase64
+  ? `data:image/png;base64,${logoBase64}`
+  : '';
 
 const shell = (bodyContent) => `
 <!DOCTYPE html>
@@ -52,9 +45,9 @@ const shell = (bodyContent) => `
         style="max-width:520px;margin-bottom:28px;">
         <tr>
           <td align="center">
-            <img src="cid:cics-logo" alt="CICS Logo" width="80" height="80"
+            ${logoSrc ? `<img src="${logoSrc}" alt="CICS Logo" width="80" height="80"
               style="border-radius:24px;display:block;margin:0 auto 14px;
-                     box-shadow:0 8px 24px rgba(47,49,141,0.12);" />
+                     box-shadow:0 8px 24px rgba(47,49,141,0.12);" />` : ''}
             <p style="margin:0;font-size:11px;font-weight:800;color:#2f318d;
                       text-transform:uppercase;letter-spacing:0.15em;opacity:0.8;">
               CICS E-Voting System
@@ -67,7 +60,6 @@ const shell = (bodyContent) => `
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
         style="max-width:520px;background:#ffffff;border-radius:40px;
                box-shadow:0 20px 40px rgba(47,49,141,0.06);">
-
 
         ${bodyContent}
 
@@ -122,8 +114,6 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
   const bodyContent = `
         <tr>
           <td style="padding:36px 40px 0;">
-
-            <!-- Icon + heading row -->
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
@@ -136,22 +126,18 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
                 </td>
               </tr>
             </table>
-
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
               Hi <strong style="color:#1e293b;">${userName}</strong>, your ballot has been
               <strong style="color:#2f318d;">securely recorded</strong>. This email serves as
               your official cryptographic receipt.
             </p>
-
             <p style="margin:0 0 12px;font-size:11px;font-weight:800;color:#94a3b8;
                       text-transform:uppercase;letter-spacing:0.12em;
                       border-bottom:1px solid #f1f5f9;padding-bottom:10px;">
               Your Selections
             </p>
-
           </td>
         </tr>
-
         <tr>
           <td style="padding:0 40px 28px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
@@ -159,8 +145,6 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
             </table>
           </td>
         </tr>
-
-        <!-- Privacy notice -->
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -178,17 +162,15 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `;
 
-  return transporter.sendMail({
-    from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: `MSU CICS Elections <${process.env.RESEND_FROM_EMAIL}>`,
     to: userEmail,
     subject: `Ballot Receipt: ${electionName}`,
     html: shell(bodyContent),
-    attachments: [{
-      filename: 'cics.png',
-      path: logoPath,
-      cid: 'cics-logo'
-    }]
   });
+
+  if (error) throw new Error(`Vote email failed: ${JSON.stringify(error)}`);
+  return data;
 };
 
 export const sendStatusEmail = async (userEmail, userName, action) => {
@@ -198,7 +180,6 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
   const bodyContent = isApproved ? `
         <tr>
           <td style="padding:36px 40px 0;">
-
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
@@ -211,16 +192,13 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
                 </td>
               </tr>
             </table>
-
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
               Hi <strong style="color:#1e293b;">${userName}</strong>, great news! Your registration
               has been <strong style="color:#2f318d;">approved</strong>. You are now authorized to
               vote. Please follow the instructions in the dashboard to cast your ballot.
             </p>
-
           </td>
         </tr>
-
         <tr>
           <td style="padding:0 40px 28px;" align="center">
             <a href="${loginUrl}"
@@ -232,7 +210,6 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
             </a>
           </td>
         </tr>
-
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -251,7 +228,6 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
     ` : `
         <tr>
           <td style="padding:36px 40px 0;">
-
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
@@ -264,16 +240,13 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
                 </td>
               </tr>
             </table>
-
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
               Hi <strong style="color:#1e293b;">${userName}</strong>, your registration was
               <strong style="color:#dc2626;">not approved</strong>. To maintain system integrity,
               your application data has been removed from our temporary registry.
             </p>
-
           </td>
         </tr>
-
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -298,15 +271,15 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </tr>
     `;
 
-  return transporter.sendMail({
-    from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: `MSU CICS Membership <${process.env.RESEND_FROM_EMAIL}>`,
     to: userEmail,
-    subject: isApproved ? 'Application Approved – MSU CICS' : 'Application Status Update – MSU CICS',
+    subject: isApproved
+      ? 'Application Approved – MSU CICS'
+      : 'Application Status Update – MSU CICS',
     html: shell(bodyContent),
-    attachments: [{
-      filename: 'cics.png',
-      path: logoPath,
-      cid: 'cics-logo'
-    }]
   });
+
+  if (error) throw new Error(`Status email failed: ${JSON.stringify(error)}`);
+  return data;
 };
