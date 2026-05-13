@@ -16,18 +16,18 @@ const __dirname = path.dirname(__filename);
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT == '465', // true for 465, false for other ports
+  secure: process.env.SMTP_PORT === '465',
   requireTLS: true,
+  family: 4,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
-    family: 4, // Force IPv4
-  },
+    rejectUnauthorized: false
+  }
 });
 
-// Verify connection configuration
 transporter.verify(function (error, success) {
   if (error) {
     console.error('SMTP Connection Error:', error);
