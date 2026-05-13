@@ -21,12 +21,12 @@ const transporter = nodemailer.createTransport({
     secure: false, // use STARTTLS
     family: 4, // Force IPv4
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Use Gmail App Password
+        user: process.env.EMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS // Use Gmail App Password
     },
-    tls: {
-        rejectUnauthorized: false
-    },
+    // Optional timeout settings to avoid indefinite hangs
+    connectionTimeout: 20000, // 20 s
+    greetingTimeout: 5000,
     // Use custom DNS lookup to prefer IPv4
     lookup: ipv4Lookup,
 });
