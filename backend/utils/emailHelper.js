@@ -2,6 +2,11 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import dns from 'dns';
+
+// Force IPv4 as some networks have issues with IPv6 for SMTP
+dns.setDefaultResultOrder('ipv4first');
+
 
 dotenv.config();
 
