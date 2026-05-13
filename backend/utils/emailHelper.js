@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -9,35 +10,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_PORT == 465,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-    tls: { rejectUnauthorized: false },
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
-transporter.verify((error) => {
-    if (error) {
-        console.error('SMTP Connection Error:', {
-            message: error.message,
-            code: error.code,
-            command: error.command,
-        });
-    } else {
-        console.log('SMTP Server is ready to take our messages');
-    }
+// Verify connection configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('SMTP Connection Error:', error);
+  } else {
+    console.log('SMTP Server is ready to take our messages');
+  }
 });
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
-const attachment = [{ filename: 'cics.png', path: logoPath, cid: 'cics-logo' }];
+const logoBuffer = fs.readFileSync(logoPath);
 
-// ─── Shared base shell ─────────────────────────────────────────────────────────
+
 const shell = (bodyContent) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -71,14 +65,8 @@ const shell = (bodyContent) => `
       <!-- Main card -->
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
         style="max-width:520px;background:#ffffff;border-radius:40px;
-               border:1px solid #e2e8f0;
                box-shadow:0 20px 40px rgba(47,49,141,0.06);">
 
-        <!-- Top accent stripe -->
-        <tr>
-          <td style="height:5px;background:linear-gradient(90deg,#2f318d,#4f52c8,#2f318d);
-                     border-radius:40px 40px 0 0;"></td>
-        </tr>
 
         ${bodyContent}
 
@@ -107,10 +95,10 @@ const shell = (bodyContent) => `
 </body>
 </html>`;
 
-// ─── Vote confirmation email ───────────────────────────────────────────────────
+
 export const sendVoteEmail = async (userEmail, userName, electionName, votes) => {
 
-    const voteRows = votes.map((v) => `
+  const voteRows = votes.map((v) => `
         <tr>
           <td style="padding-bottom:10px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -132,7 +120,7 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `).join('');
 
-    const bodyContent = `
+  const bodyContent = `
         <tr>
           <td style="padding:36px 40px 0;">
 
@@ -177,7 +165,7 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
+              style="background:#f8fafc;border-radius:24px;">
               <tr>
                 <td style="padding:18px 22px;text-align:center;">
                   <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
@@ -191,21 +179,26 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `;
 
-    return transporter.sendMail({
-        from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
-        to: userEmail,
-        subject: `Ballot Receipt: ${electionName}`,
-        html: shell(bodyContent),
-        attachments: attachment,
-    });
+  return transporter.sendMail({
+    from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
+    to: userEmail,
+    subject: `Ballot Receipt: ${electionName}`,
+    html: shell(bodyContent),
+    attachments: [
+      {
+        filename: 'cics.png',
+        content: logoBuffer,
+        cid: 'cics-logo',
+      },
+    ],
+  });
 };
 
-// ─── Approval / rejection status email ────────────────────────────────────────
 export const sendStatusEmail = async (userEmail, userName, action) => {
-    const isApproved = action === 'approved';
-    const loginUrl = 'https://cicsvotingsystem.vercel.app/login';
+  const isApproved = action === 'approved';
+  const loginUrl = 'https://cicsvotingsystem.vercel.app/login';
 
-    const bodyContent = isApproved ? `
+  const bodyContent = isApproved ? `
         <tr>
           <td style="padding:36px 40px 0;">
 
@@ -246,7 +239,7 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
+              style="background:#f8fafc;border-radius:24px;">
               <tr>
                 <td style="padding:18px 22px;text-align:center;">
                   <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
@@ -308,13 +301,19 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </tr>
     `;
 
-    return transporter.sendMail({
-        from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
-        to: userEmail,
-        subject: isApproved
-            ? 'Application Approved – MSU CICS'
-            : 'Application Status Update – MSU CICS',
-        html: shell(bodyContent),
-        attachments: attachment,
-    });
+  return transporter.sendMail({
+    from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
+    to: userEmail,
+    subject: isApproved
+      ? 'Application Approved – MSU CICS'
+      : 'Application Status Update – MSU CICS',
+    html: shell(bodyContent),
+    attachments: [
+      {
+        filename: 'cics.png',
+        content: logoBuffer,
+        cid: 'cics-logo',
+      },
+    ],
+  });
 };
