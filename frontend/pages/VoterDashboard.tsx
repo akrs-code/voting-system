@@ -1,15 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { memo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useActiveElection } from '../hooks/useActiveElection';
 import { ballotService } from '../services/ballotService';
 import {
   Loader2, Check, User, Eye, ArrowRight, X,
-  CheckCircle2, ShieldCheck, AlertCircle
+  CheckCircle2, ShieldCheck, AlertCircle, Download, LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { generateVoteReceipt } from '../utils/pdfGenerator';
+
+const CandidateCard = memo(({ candidate, isSelected, isFull, maxVote, onSelect, selectedIndex }: any) => {
+  const partylistName = candidate.partylist || "Independent";
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`group relative cursor-pointer w-full max-w-70 sm:max-w-none sm:w-65 lg:w-70 aspect-3/4 rounded-4xl overflow-hidden transition-all duration-500 ease-out border-2
+        ${isSelected
+          ? "border-[#2f318d] shadow-2xl shadow-indigo-900/30 scale-[1.02] md:scale-105"
+          : isFull
+            ? "border-transparent shadow-md opacity-40 cursor-not-allowed"
+            : "border-transparent bg-white hover:border-indigo-50 shadow-md hover:shadow-xl hover:-translate-y-2"
+        }`}
+    >
+      <div className="absolute inset-0 bg-slate-100">
+        {candidate.profileImage ? (
+          <img
+            src={candidate.profileImage}
+            alt={candidate.name}
+            loading="lazy"
+            className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${!isSelected && "grayscale group-hover:grayscale-0"}`}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-50">
+            <User size={64} className={isSelected ? 'text-[#2f318d]' : 'text-slate-300'} />
+          </div>
+        )}
+      </div>
+
+      <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-20 transition-all duration-500 ${isSelected
+        ? 'bg-[#2f318d] text-white scale-100 opacity-100 shadow-md'
+        : 'bg-white/90 backdrop-blur-sm text-slate-300 scale-75 opacity-0 group-hover:opacity-100'
+        }`}>
+        <Check size={16} strokeWidth={3} />
+      </div>
+
+      {isSelected && maxVote > 1 && (
+        <div className="absolute top-4 left-4 w-7 h-7 rounded-full bg-[#2f318d] text-white text-xs font-black flex items-center justify-center z-20 shadow-md">
+          {selectedIndex + 1}
+        </div>
+      )}
+
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-3 pt-16 bg-linear-to-t from-slate-900/50 via-slate-900/20 to-transparent">
+        <div className={`w-full rounded-[1.25rem] p-4 transition-all duration-500 flex flex-col items-start text-left ${isSelected
+          ? "bg-[#2f318d] text-white shadow-[0_0_20px_rgba(47,49,141,0.3)]"
+          : "bg-white/95 backdrop-blur-md shadow-lg"
+          }`}>
+          <h3 className={`text-base md:text-lg font-black leading-tight line-clamp-2 w-full transition-colors mb-2 ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+            {candidate.name}
+          </h3>
+          <span className={`inline-block px-2.5 py-1 rounded-md text-[0.55rem] md:text-[0.6rem] font-black tracking-widest uppercase transition-colors ${isSelected
+            ? 'bg-white/20 text-indigo-50'
+            : 'bg-slate-100 text-slate-500 group-hover:bg-[#2f318d]/10 group-hover:text-[#2f318d]'
+            }`}>
+            {partylistName}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const VoterDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { activeElection, loading: electionLoading } = useActiveElection();
 
   const [positions, setPositions] = useState<any[]>([]);
@@ -19,6 +83,25 @@ const VoterDashboard = () => {
   const [fetching, setFetching] = useState(true);
   const [showReview, setShowReview] = useState(false);
   const [showAbstainWarning, setShowAbstainWarning] = useState(false);
+  const [countdown, setCountdown] = useState(20);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [justVoted, setJustVoted] = useState(false);
+
+  useEffect(() => {
+    if (hasVoted && justVoted) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            logout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [hasVoted, justVoted, logout]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -26,6 +109,14 @@ const VoterDashboard = () => {
         const votedList = (user as any).votedElections || [];
         if (votedList.includes(activeElection._id)) {
           setHasVoted(true);
+          const savedReceipt = localStorage.getItem(`receipt_${activeElection._id}`);
+          if (savedReceipt) {
+            try {
+              setReceiptData(JSON.parse(savedReceipt));
+            } catch (e) {
+              console.error("Failed to parse saved receipt", e);
+            }
+          }
         } else {
           await fetchBallotData();
         }
@@ -78,7 +169,10 @@ const VoterDashboard = () => {
     });
   };
 
-  const filledCount = Object.values(selectedVotes).filter(arr => arr.length > 0).length;
+  const filledCount = useMemo(() =>
+    Object.values(selectedVotes).filter(arr => arr.length > 0).length,
+    [selectedVotes]
+  );
 
   const handleSubmit = async () => {
     if (!activeElection?._id) return;
@@ -89,13 +183,47 @@ const VoterDashboard = () => {
         candidateIds: candidateIds
       }));
 
-      await ballotService.castBallot({
+      const response = await ballotService.castBallot({
         electionId: activeElection._id,
         votes: votesArray
       });
 
+      const receiptVotes = positions.map(pos => {
+        const selectedIds = selectedVotes[pos.positionId] || [];
+        const selectedCandidates = pos.candidates.filter((c: any) =>
+          selectedIds.includes(c.candidateId)
+        );
+
+        return {
+          positionName: pos.positionName,
+          candidateName: selectedCandidates.length > 0
+            ? selectedCandidates.map((c: any) => c.name).join(', ')
+            : 'Abstain'
+        };
+      });
+
+      const rData = {
+        voterName: user?.name || 'Voter',
+        electionTitle: activeElection.title,
+        ballotId: response.ballotId || 'N/A',
+        votes: receiptVotes,
+        timestamp: new Date().toLocaleString()
+      };
+
+      setReceiptData(rData);
+      localStorage.setItem(`receipt_${activeElection._id}`, JSON.stringify(rData));
+
       setHasVoted(true);
+      setJustVoted(true);
       setShowReview(false);
+
+      // Trigger auto-download
+      try {
+        await generateVoteReceipt(rData);
+        toast.success("Vote receipt downloaded!");
+      } catch (err) {
+        console.error("Auto-download failed:", err);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Submission failed");
     } finally {
@@ -135,9 +263,46 @@ const VoterDashboard = () => {
           <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 relative z-10" strokeWidth={2.5} />
         </div>
         <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Vote Successfully Cast!</h1>
-        <p className="text-slate-500 text-xs md:text-sm mt-3 leading-relaxed">
+        <p className="text-slate-500 text-xs md:text-sm mt-3 leading-relaxed mb-8">
           Your ballot has been securely recorded. Thank you for participating in the {activeElection?.title || 'current'} election.
         </p>
+
+        <div className="w-full space-y-3">
+          <button
+            onClick={async () => {
+              if (!receiptData) {
+                toast.error("Receipt data not found");
+                return;
+              }
+              try {
+                await generateVoteReceipt(receiptData);
+                toast.success("Receipt downloaded!");
+              } catch (err) {
+                toast.error("Download failed. Please try again.");
+                console.error(err);
+              }
+            }}
+            className="w-full h-14 bg-[#2f318d] text-white rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          >
+            <Download size={18} />
+            Download Receipt
+          </button>
+
+          <button
+            onClick={() => logout()}
+            className="w-full h-14 bg-slate-50 text-slate-600 rounded-2xl font-bold border border-slate-100 hover:bg-slate-100 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          >
+            <LogOut size={18} />
+            Logout Now
+          </button>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 w-full">
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Redirecting to login in {countdown} seconds...</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -182,66 +347,18 @@ const VoterDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 w-full place-items-center px-2">
                   {pos.candidates.map((candidate: any) => {
                     const isSelected = selected.includes(candidate.candidateId);
-
                     const isFull = !isSelected && selected.length >= maxVote;
-                    const partylistName = candidate.partylist || "Independent";
 
                     return (
-                      <div
+                      <CandidateCard
                         key={candidate.candidateId}
-                        onClick={() => handleSelect(pos.positionId, candidate.candidateId, maxVote)}
-                        className={`group relative cursor-pointer w-full max-w-70 sm:max-w-none sm:w-65 lg:w-70 aspect-3/4 rounded-4xl overflow-hidden transition-all duration-500 ease-out border-2
-                          ${isSelected
-                            ? "border-[#2f318d] shadow-2xl shadow-indigo-900/30 scale-[1.02] md:scale-105"
-                            : isFull
-                              ? "border-transparent shadow-md opacity-40 cursor-not-allowed"
-                              : "border-transparent bg-white hover:border-indigo-50 shadow-md hover:shadow-xl hover:-translate-y-2"
-                          }`}
-                      >
-                        <div className="absolute inset-0 bg-slate-100">
-                          {candidate.profileImage ? (
-                            <img
-                              src={candidate.profileImage}
-                              alt={candidate.name}
-                              className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${!isSelected && "grayscale group-hover:grayscale-0"}`}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50">
-                              <User size={64} className={isSelected ? 'text-[#2f318d]' : 'text-slate-300'} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-20 transition-all duration-500 ${isSelected
-                          ? 'bg-[#2f318d] text-white scale-100 opacity-100 shadow-md'
-                          : 'bg-white/90 backdrop-blur-sm text-slate-300 scale-75 opacity-0 group-hover:opacity-100'
-                          }`}>
-                          <Check size={16} strokeWidth={3} />
-                        </div>
-
-                        {isSelected && maxVote > 1 && (
-                          <div className="absolute top-4 left-4 w-7 h-7 rounded-full bg-[#2f318d] text-white text-xs font-black flex items-center justify-center z-20 shadow-md">
-                            {selected.indexOf(candidate.candidateId) + 1}
-                          </div>
-                        )}
-
-                        <div className="absolute bottom-0 left-0 right-0 z-10 p-3 pt-16 bg-linear-to-t from-slate-900/50 via-slate-900/20 to-transparent">
-                          <div className={`w-full rounded-[1.25rem] p-4 transition-all duration-500 flex flex-col items-start text-left ${isSelected
-                            ? "bg-[#2f318d] text-white shadow-[0_0_20px_rgba(47,49,141,0.3)]"
-                            : "bg-white/95 backdrop-blur-md shadow-lg"
-                            }`}>
-                            <h3 className={`text-base md:text-lg font-black leading-tight line-clamp-2 w-full transition-colors mb-2 ${isSelected ? 'text-white' : 'text-slate-800'}`}>
-                              {candidate.name}
-                            </h3>
-                            <span className={`inline-block px-2.5 py-1 rounded-md text-[0.55rem] md:text-[0.6rem] font-black tracking-widest uppercase transition-colors ${isSelected
-                              ? 'bg-white/20 text-indigo-50'
-                              : 'bg-slate-100 text-slate-500 group-hover:bg-[#2f318d]/10 group-hover:text-[#2f318d]'
-                              }`}>
-                              {partylistName}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                        candidate={candidate}
+                        isSelected={isSelected}
+                        isFull={isFull}
+                        maxVote={maxVote}
+                        selectedIndex={selected.indexOf(candidate.candidateId)}
+                        onSelect={() => handleSelect(pos.positionId, candidate.candidateId, maxVote)}
+                      />
                     );
                   })}
                 </div>
@@ -335,6 +452,7 @@ const VoterDashboard = () => {
                 {positions.map((pos) => {
                   const selected = selectedVotes[pos.positionId] || [];
                   const maxVote: number = pos.maxVote ?? 1;
+
                   const selectedCandidates = pos.candidates.filter((c: any) =>
                     selected.includes(c.candidateId)
                   );

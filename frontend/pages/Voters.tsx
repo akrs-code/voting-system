@@ -247,15 +247,15 @@ const Voters = () => {
                       </td>
                       <td className="px-6 md:px-10 py-4 text-right">
                         <div className="flex justify-end gap-2.5">
-                          <button 
-                            onClick={() => handleOpenModal(voter)} 
+                          <button
+                            onClick={() => handleOpenModal(voter)}
                             title="Edit Student"
                             className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
                           >
                             <Edit3 size={18} />
                           </button>
-                          <button 
-                            onClick={() => handleDelete(voter._id)} 
+                          <button
+                            onClick={() => handleDelete(voter._id)}
                             title="Delete Student"
                             className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
                           >

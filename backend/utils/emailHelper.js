@@ -1,7 +1,6 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 
 dotenv.config();
 
@@ -9,22 +8,34 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_PORT == 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: { rejectUnauthorized: false },
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100
+});
+
+transporter.verify((error) => {
+  if (error) {
+    console.error('SMTP Connection Error:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+    });
+  } else {
+    console.log('SMTP Server is ready to take our messages');
+  }
+});
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
-
-// Read logo as base64 for inline embedding
-const logoBase64 = (() => {
-  try {
-    return fs.readFileSync(logoPath).toString('base64');
-  } catch {
-    return null;
-  }
-})();
-
-const logoSrc = logoBase64
-  ? `data:image/png;base64,${logoBase64}`
-  : '';
+const attachment = [{ filename: 'cics.png', path: logoPath, cid: 'cics-logo' }];
 
 const shell = (bodyContent) => `
 <!DOCTYPE html>
@@ -40,14 +51,13 @@ const shell = (bodyContent) => `
     style="background-color:#f8fafc;padding:48px 20px;">
     <tr><td align="center">
 
-      <!-- Logo + institution label -->
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
         style="max-width:520px;margin-bottom:28px;">
         <tr>
           <td align="center">
-            ${logoSrc ? `<img src="${logoSrc}" alt="CICS Logo" width="80" height="80"
+            <img src="cid:cics-logo" alt="CICS Logo" width="80" height="80"
               style="border-radius:24px;display:block;margin:0 auto 14px;
-                     box-shadow:0 8px 24px rgba(47,49,141,0.12);" />` : ''}
+                     box-shadow:0 8px 24px rgba(47,49,141,0.12);" />
             <p style="margin:0;font-size:11px;font-weight:800;color:#2f318d;
                       text-transform:uppercase;letter-spacing:0.15em;opacity:0.8;">
               CICS E-Voting System
@@ -56,14 +66,18 @@ const shell = (bodyContent) => `
         </tr>
       </table>
 
-      <!-- Main card -->
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
         style="max-width:520px;background:#ffffff;border-radius:40px;
+               border:1px solid #e2e8f0;
                box-shadow:0 20px 40px rgba(47,49,141,0.06);">
+
+        <tr>
+          <td style="height:5px;background:linear-gradient(90deg,#2f318d,#4f52c8,#2f318d);
+                     border-radius:40px 40px 0 0;"></td>
+        </tr>
 
         ${bodyContent}
 
-        <!-- Footer -->
         <tr>
           <td style="padding:0 40px 36px;" align="center">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
@@ -89,17 +103,15 @@ const shell = (bodyContent) => `
 </html>`;
 
 export const sendVoteEmail = async (userEmail, userName, electionName, votes) => {
+
   const voteRows = votes.map((v) => `
         <tr>
           <td style="padding-bottom:10px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-              style="background:#ffffff;border:1px solid #e8eaf6;border-radius:20px;
+              style="background:#ffffff;border-radius:20px;
                      box-shadow:0 2px 8px rgba(47,49,141,0.04);">
               <tr>
-                <td width="4"
-                  style="background:linear-gradient(180deg,#2f318d,#4f52c8);
-                         border-radius:20px 0 0 20px;"></td>
-                <td style="padding:14px 20px;">
+                <td style="padding:14px 24px;">
                   <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:#94a3b8;
                             text-transform:uppercase;letter-spacing:0.12em;">${v.positionName}</p>
                   <p style="margin:0;font-size:16px;font-weight:800;color:#2f318d;
@@ -114,30 +126,35 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
   const bodyContent = `
         <tr>
           <td style="padding:36px 40px 0;">
+
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
                   style="background:#dcfce7;border-radius:16px;text-align:center;
                          line-height:52px;font-size:22px;">✓</td>
                 <td style="padding-left:14px;">
-                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e292b;
                             letter-spacing:-0.02em;">Ballot Confirmed</p>
                   <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${electionName}</p>
                 </td>
               </tr>
             </table>
+
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
-              Hi <strong style="color:#1e293b;">${userName}</strong>, your ballot has been
+              Hi <strong style="color:#1e292b;">${userName}</strong>, your ballot has been
               <strong style="color:#2f318d;">securely recorded</strong>. This email serves as
               your official cryptographic receipt.
             </p>
+
             <p style="margin:0 0 12px;font-size:11px;font-weight:800;color:#94a3b8;
                       text-transform:uppercase;letter-spacing:0.12em;
                       border-bottom:1px solid #f1f5f9;padding-bottom:10px;">
               Your Selections
             </p>
+
           </td>
         </tr>
+
         <tr>
           <td style="padding:0 40px 28px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
@@ -145,10 +162,11 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
             </table>
           </td>
         </tr>
+
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-              style="background:#f8fafc;border-radius:24px;">
+              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
               <tr>
                 <td style="padding:18px 22px;text-align:center;">
                   <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
@@ -162,15 +180,13 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `;
 
-  const { data, error } = await resend.emails.send({
-    from: `MSU CICS Elections <${process.env.RESEND_FROM_EMAIL}>`,
+  return transporter.sendMail({
+    from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
     to: userEmail,
     subject: `Ballot Receipt: ${electionName}`,
     html: shell(bodyContent),
+    attachments: attachment,
   });
-
-  if (error) throw new Error(`Vote email failed: ${JSON.stringify(error)}`);
-  return data;
 };
 
 export const sendStatusEmail = async (userEmail, userName, action) => {
@@ -180,25 +196,29 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
   const bodyContent = isApproved ? `
         <tr>
           <td style="padding:36px 40px 0;">
+
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
                   style="background:#eef2ff;border-radius:16px;text-align:center;
                          line-height:52px;font-size:22px;">👤</td>
                 <td style="padding-left:14px;">
-                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e292b;
                             letter-spacing:-0.02em;">Application Approved</p>
                   <p style="margin:2px 0 0;font-size:13px;color:#64748b;">MSU CICS Election Portal</p>
                 </td>
               </tr>
             </table>
+
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
-              Hi <strong style="color:#1e293b;">${userName}</strong>, great news! Your registration
+              Hi <strong style="color:#1e292b;">${userName}</strong>, great news! Your registration
               has been <strong style="color:#2f318d;">approved</strong>. You are now authorized to
               vote. Please follow the instructions in the dashboard to cast your ballot.
             </p>
+
           </td>
         </tr>
+
         <tr>
           <td style="padding:0 40px 28px;" align="center">
             <a href="${loginUrl}"
@@ -210,10 +230,11 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
             </a>
           </td>
         </tr>
+
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-              style="background:#f8fafc;border-radius:24px;">
+              style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:24px;">
               <tr>
                 <td style="padding:18px 22px;text-align:center;">
                   <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
@@ -228,25 +249,29 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
     ` : `
         <tr>
           <td style="padding:36px 40px 0;">
+
             <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td width="52" height="52"
                   style="background:#fee2e2;border-radius:16px;text-align:center;
                          line-height:52px;font-size:20px;font-weight:800;color:#dc2626;">✕</td>
                 <td style="padding-left:14px;">
-                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e293b;
+                  <p style="margin:0;font-size:18px;font-weight:800;color:#1e292b;
                             letter-spacing:-0.02em;">Application Not Approved</p>
                   <p style="margin:2px 0 0;font-size:13px;color:#64748b;">MSU CICS Election Portal</p>
                 </td>
               </tr>
             </table>
+
             <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.65;">
-              Hi <strong style="color:#1e293b;">${userName}</strong>, your registration was
+              Hi <strong style="color:#1e292b;">${userName}</strong>, your registration was
               <strong style="color:#dc2626;">not approved</strong>. To maintain system integrity,
               your application data has been removed from our temporary registry.
             </p>
+
           </td>
         </tr>
+
         <tr>
           <td style="padding:0 40px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -271,15 +296,13 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </tr>
     `;
 
-  const { data, error } = await resend.emails.send({
-    from: `MSU CICS Membership <${process.env.RESEND_FROM_EMAIL}>`,
+  return transporter.sendMail({
+    from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
     to: userEmail,
     subject: isApproved
       ? 'Application Approved – MSU CICS'
       : 'Application Status Update – MSU CICS',
     html: shell(bodyContent),
+    attachments: attachment,
   });
-
-  if (error) throw new Error(`Status email failed: ${JSON.stringify(error)}`);
-  return data;
 };

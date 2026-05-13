@@ -15,6 +15,7 @@ import * as Yup from 'yup';
 import { positionService } from '../services/positionService';
 import { electionService } from '../services/electionService';
 import CustomDropdown from '../components/CustomDropdown';
+import Pagination from '../components/Pagination';
 import { Position } from 'types/interface';
 import { Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -26,6 +27,9 @@ const Positions = () => {
   const [selectedElectionId, setSelectedElectionId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -70,6 +74,23 @@ const Positions = () => {
       return matchesSearch && matchesDept;
     });
   }, [positions, searchTerm, deptFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, deptFilter, selectedElectionId]);
+
+  const totalPages = Math.max(Math.ceil(filteredPositions.length / itemsPerPage), 1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const currentPositions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredPositions.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredPositions, currentPage]);
 
   const handleOpenModal = (pos?: Position) => {
     if (pos) {
@@ -166,7 +187,8 @@ const Positions = () => {
             <p className="text-slate-400 font-medium">No matching positions found.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto scrollbar-hide">
+          <>
+            <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full text-left border-collapse min-w-175">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/30">
@@ -177,7 +199,7 @@ const Positions = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredPositions.map((pos) => (
+                {currentPositions.map((pos) => (
                   <tr key={pos._id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 md:px-10 py-4">
                       <div className="flex flex-col">
@@ -229,6 +251,14 @@ const Positions = () => {
               </tbody>
             </table>
           </div>
+          <div className="p-4 border-t border-slate-50">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </div>
+        </>
         )}
       </div>
 

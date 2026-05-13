@@ -15,7 +15,6 @@ import Pagination from '../components/Pagination';
 import CustomDropdown from '../components/CustomDropdown';
 import { socket } from '../services/socket';
 import { User } from '../types/interface';
-import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const Applications = () => {
@@ -189,7 +188,7 @@ const Applications = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto scrollbar-hide">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-175">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
@@ -200,65 +199,60 @@ const Applications = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  <AnimatePresence mode='popLayout'>
-                    {currentApps.map((app) => (
-                      <motion.tr
-                        key={app._id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="hover:bg-slate-50/50 transition-colors"
-                      >
-                        <td className="px-6 md:px-10 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{app.name}</span>
-                            <span className="mt-1 text-[11px] text-slate-400 font-medium">{app.studentId}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 md:px-10 py-4 text-center">
-                          <div className="flex justify-center gap-2 items-center">
-                            <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
-                              {app.department}
-                            </span>
-                            <span className="text-slate-400 text-[11px] font-semibold">
-                              {app.yearLevel ? `${ordinals[app.yearLevel]} Year` : 'Pending Level'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 md:px-10 py-4 text-center">
-                          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-600 border-amber-100">
-                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            REVIEW REQUIRED
-                          </div>
-                        </td>
-                        <td className="px-6 md:px-10 py-4 text-right">
-                          <div className="flex justify-end gap-2.5">
-                            <button
-                              onClick={() => handleViewDetails(app)}
-                              title="View Details"
-                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleAction(app._id, 'approved')}
-                              title="Approve Applicant"
-                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                            >
-                              <UserCheck size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleAction(app._id, 'rejected')}
-                              title="Reject Applicant"
-                              className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                            >
-                              <XCircle size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                  {currentApps.map((app) => (
+                    <tr
+                      key={app._id}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-6 md:px-10 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800 text-sm md:text-[0.95rem]">{app.name}</span>
+                          <span className="mt-1 text-[11px] text-slate-400 font-medium">{app.studentId}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 md:px-10 py-4 text-center">
+                        <div className="flex justify-center gap-2 items-center">
+                          <span className="text-[#2f318d] text-[10px] font-bold px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100 uppercase tracking-wide">
+                            {app.department}
+                          </span>
+                          <span className="text-slate-400 text-[11px] font-semibold">
+                            {app.yearLevel ? `${ordinals[app.yearLevel]} Year` : 'Pending Level'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 md:px-10 py-4 text-center">
+                        <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-600 border-amber-100">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          REVIEW REQUIRED
+                        </div>
+                      </td>
+                      <td className="px-6 md:px-10 py-4 text-right">
+                        <div className="flex justify-end gap-2.5">
+                          <button
+                            onClick={() => handleViewDetails(app)}
+                            title="View Details"
+                            className="p-2.5 bg-slate-100 text-slate-500 hover:bg-[#2f318d] hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleAction(app._id, 'approved')}
+                            title="Approve Applicant"
+                            className="p-2.5 bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                          >
+                            <UserCheck size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleAction(app._id, 'rejected')}
+                            title="Reject Applicant"
+                            className="p-2.5 bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

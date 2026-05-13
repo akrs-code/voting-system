@@ -44,7 +44,7 @@ export const castBallot = async (req, res) => {
             });
         });
 
-        await Ballot.create([{
+        const newBallot = await Ballot.create([{
             voter: userId,
             election: electionId,
             votes: ballotEntries,
@@ -56,7 +56,10 @@ export const castBallot = async (req, res) => {
 
         await session.commitTransaction();
 
-        res.status(201).json({ message: "Ballot cast successfully" });
+        res.status(201).json({
+            message: "Ballot cast successfully",
+            ballotId: newBallot[0]._id
+        });
 
         const voterChoices = await Candidate.find({ _id: { $in: selectedCandidateIds } })
             .populate('position', 'name')

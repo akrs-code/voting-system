@@ -35,15 +35,21 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           disabled={currentPage === 1}
-          onClick={() => onPageChange(currentPage - 1)}
-          className="px-4 py-2 text-sm font-bold text-[#2f318d] disabled:opacity-30"
+          onClick={() => {
+            onPageChange(currentPage - 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="px-4 py-2 text-sm font-bold text-[#2f318d] disabled:opacity-30 active:scale-95 transition-transform"
         >
           Back
         </button>
         <button
           disabled={currentPage === totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
-          className="px-4 py-2 text-sm font-bold text-[#2f318d] disabled:opacity-30"
+          onClick={() => {
+            onPageChange(currentPage + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="px-4 py-2 text-sm font-bold text-[#2f318d] disabled:opacity-30 active:scale-95 transition-transform"
         >
           Next
         </button>
@@ -53,37 +59,44 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
           Page <span className="text-[#2f318d] font-bold">{currentPage}</span> of {totalPages}
         </p>
-        
+
         <nav className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 disabled:opacity-20 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 disabled:opacity-20"
           >
             <ChevronLeft size={18} />
           </button>
 
           {getPageNumbers().map((page, idx) => (
             <button
-              key={idx}
-              onClick={() => typeof page === 'number' && onPageChange(page)}
+              key={typeof page === 'number' ? page : `dots-${idx}`}
+              onClick={() => {
+                if (typeof page === 'number') {
+                  onPageChange(page);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               disabled={page === '...'}
-              className={`min-w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                currentPage === page
-                  ? 'bg-[#2f318d] text-white shadow-md shadow-indigo-100'
-                  : page === '...' 
-                    ? 'text-slate-300 cursor-default'
-                    : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`min-w-10 h-10 rounded-xl text-sm font-bold transition-all duration-200 ${currentPage === page
+                ? 'bg-[#2f318d] text-white shadow-md shadow-indigo-900/10'
+                : page === '...'
+                  ? 'text-slate-300 cursor-default'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-[#2f318d]'
+                }`}
             >
               {page}
             </button>
           ))}
 
           <button
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => {
+              onPageChange(currentPage + 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 disabled:opacity-20 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 disabled:opacity-20 transition-all hover:text-[#2f318d] active:scale-90"
           >
             <ChevronRight size={18} />
           </button>
