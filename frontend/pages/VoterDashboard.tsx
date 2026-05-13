@@ -8,7 +8,7 @@ import {
   CheckCircle2, ShieldCheck, AlertCircle, Download, LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { generateVoteReceipt } from '../utils/pdfGenerator';
+import { generateVoteReceipt, isInAppBrowser } from '../utils/pdfGenerator';
 
 const CandidateCard = memo(({ candidate, isSelected, isFull, maxVote, onSelect, selectedIndex }: any) => {
   const partylistName = candidate.partylist || "Independent";
@@ -85,6 +85,7 @@ const VoterDashboard = () => {
   const [showAbstainWarning, setShowAbstainWarning] = useState(false);
   const [countdown, setCountdown] = useState(20);
   const [receiptData, setReceiptData] = useState<any>(null);
+  const isInApp = useMemo(() => isInAppBrowser(), []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -237,9 +238,6 @@ const VoterDashboard = () => {
       <p className="text-[#2f318d] text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
         Loading Official Ballot
       </p>
-      <p className="mt-4 text-slate-400 text-[10px] font-medium">
-        Session expires in {countdown}s
-      </p>
     </div>
   );
 
@@ -306,6 +304,18 @@ const VoterDashboard = () => {
             Logout Now
           </button>
         </div>
+
+        {isInApp && (
+          <div className="mt-6 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
+            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={16} />
+            <div>
+              <p className="text-[10px] md:text-xs font-bold text-amber-800 uppercase tracking-tight">Messenger/In-App Browser detected</p>
+              <p className="text-[10px] md:text-xs text-amber-700 leading-tight mt-1">
+                Downloads might be blocked. If the button above doesn't work, please tap the <span className="font-bold">three dots (⋮)</span> in the top-right and select <span className="font-bold">"Open in Browser"</span>.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 pt-6 border-t border-slate-100 w-full">
           <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">

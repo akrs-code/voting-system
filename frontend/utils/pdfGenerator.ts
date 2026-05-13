@@ -19,6 +19,10 @@ const getBase64Image = (url: string): Promise<string> => {
   });
 };
 
+export const isInAppBrowser = () => {
+  return /FBAN|FBAV|Messenger|Instagram|Threads|Line|WhatsApp/i.test(navigator.userAgent);
+};
+
 export const generateVoteReceipt = async (data: {
   voterName: string;
   electionTitle: string;
@@ -136,33 +140,33 @@ export const generateVoteReceipt = async (data: {
     const safeTitle = data.electionTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const fileName = `Receipt_${safeTitle}.pdf`;
 
-    // More robust download for mobile compatibility
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+    const inApp = isInAppBrowser();
+
+    if (inApp) {
+      // Messenger/Instagram often block blob downloads.
+      // Data URIs are sometimes handled better as they are seen as "navigating" to a PDF.
+      const dataUri = doc.output('datauristring');
+      window.location.href = dataUri;
+      return;
+    }
+
     if (isMobile) {
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
       // Mobile browsers handle window.open/location better for blobs
       const newWindow = window.open(url, '_blank');
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        // Fallback if popup is blocked
         window.location.href = url;
       }
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } else {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      doc.save(fileName);
     }
-    
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(url), 100);
 
   } catch (error) {
     console.error('PDF Generation failed:', error);
     throw error;
   }
 };
+
