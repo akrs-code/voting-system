@@ -16,19 +16,19 @@ const ipv4Lookup = (hostname, options, callback) => {
 };
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // use STARTTLS
-    family: 4, // Force IPv4
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Use Gmail App Password
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    // Use custom DNS lookup to prefer IPv4
-    lookup: ipv4Lookup,
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // use STARTTLS
+  family: 4, // Force IPv4
+  auth: {
+    user: process.env.EMAIL_USER || process.env.SMTP_USER,
+    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS // Use Gmail App Password
+  },
+  // Optional timeout settings to avoid indefinite hangs
+  connectionTimeout: 20000, // 20 s
+  greetingTimeout: 5000,
+  // Use custom DNS lookup to prefer IPv4
+  lookup: ipv4Lookup,
 });
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
@@ -178,17 +178,17 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `;
 
-    return transporter.sendMail({
-        from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
-        to: userEmail,
-        subject: `Ballot Receipt: ${electionName}`,
-        html: shell(bodyContent),
-        attachments: [{
-            filename: 'cics.png',
-            path: logoPath,
-            cid: 'cics-logo'
-        }]
-    });
+  return transporter.sendMail({
+    from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
+    to: userEmail,
+    subject: `Ballot Receipt: ${electionName}`,
+    html: shell(bodyContent),
+    attachments: [{
+      filename: 'cics.png',
+      path: logoPath,
+      cid: 'cics-logo'
+    }]
+  });
 };
 
 export const sendStatusEmail = async (userEmail, userName, action) => {
@@ -298,15 +298,15 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </tr>
     `;
 
-    return transporter.sendMail({
-        from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
-        to: userEmail,
-        subject: isApproved ? 'Application Approved – MSU CICS' : 'Application Status Update – MSU CICS',
-        html: shell(bodyContent),
-        attachments: [{
-            filename: 'cics.png',
-            path: logoPath,
-            cid: 'cics-logo'
-        }]
-    });
+  return transporter.sendMail({
+    from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
+    to: userEmail,
+    subject: isApproved ? 'Application Approved – MSU CICS' : 'Application Status Update – MSU CICS',
+    html: shell(bodyContent),
+    attachments: [{
+      filename: 'cics.png',
+      path: logoPath,
+      cid: 'cics-logo'
+    }]
+  });
 };
