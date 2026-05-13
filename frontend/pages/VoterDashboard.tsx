@@ -85,23 +85,20 @@ const VoterDashboard = () => {
   const [showAbstainWarning, setShowAbstainWarning] = useState(false);
   const [countdown, setCountdown] = useState(20);
   const [receiptData, setReceiptData] = useState<any>(null);
-  const [justVoted, setJustVoted] = useState(false);
 
   useEffect(() => {
-    if (hasVoted && justVoted) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            logout();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [hasVoted, justVoted, logout]);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          logout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [logout]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -214,10 +211,8 @@ const VoterDashboard = () => {
       localStorage.setItem(`receipt_${activeElection._id}`, JSON.stringify(rData));
 
       setHasVoted(true);
-      setJustVoted(true);
       setShowReview(false);
 
-      // Trigger auto-download
       try {
         await generateVoteReceipt(rData);
         toast.success("Vote receipt downloaded!");
@@ -237,6 +232,9 @@ const VoterDashboard = () => {
       <p className="text-[#2f318d] text-[0.7rem] font-bold uppercase tracking-widest opacity-60">
         Loading Official Ballot
       </p>
+      <p className="mt-4 text-slate-400 text-[10px] font-medium">
+        Session expires in {countdown}s
+      </p>
     </div>
   );
 
@@ -251,6 +249,13 @@ const VoterDashboard = () => {
         <p className="text-slate-500 text-xs md:text-sm mt-3 leading-relaxed">
           The election <strong>{activeElection.title}</strong> is currently locked.
         </p>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 w-full">
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Redirecting to login in {countdown} seconds...</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -377,6 +382,14 @@ const VoterDashboard = () => {
               <span className="text-slate-300 font-medium">/</span>
               <span className="text-slate-500 font-bold text-xs md:text-base leading-none">{positions.length}</span>
               <span className="text-[10px] md:text-xs font-semibold text-slate-400 ml-1 hidden sm:inline">Filled</span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex flex-col items-center px-4 border-x border-slate-100">
+            <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Session Timeout</span>
+            <div className="flex items-center gap-2 text-[#2f318d] font-bold">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="text-sm">{countdown}s</span>
             </div>
           </div>
 
