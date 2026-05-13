@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -9,17 +10,25 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Force IPv4 DNS resolution to avoid ENETUNREACH on IPv6 addresses
+const ipv4Lookup = (hostname, options, callback) => {
+  dns.lookup(hostname, { family: 4 }, callback);
+};
+
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // Use SSL
+    port: 587,
+    secure: false, // use STARTTLS
+    family: 4, // Force IPv4
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS // Use Gmail App Password
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    // Use custom DNS lookup to prefer IPv4
+    lookup: ipv4Lookup,
 });
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
