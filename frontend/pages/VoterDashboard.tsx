@@ -88,6 +88,8 @@ const VoterDashboard = () => {
   const isInApp = useMemo(() => isInAppBrowser(), []);
 
   useEffect(() => {
+    if (!hasVoted && !activeElection?.isLocked) return;
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -99,7 +101,7 @@ const VoterDashboard = () => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [logout]);
+  }, [logout, hasVoted, activeElection?.isLocked]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -400,13 +402,6 @@ const VoterDashboard = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-col items-center px-4 border-x border-slate-100">
-            <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Session Timeout</span>
-            <div className="flex items-center gap-2 text-[#2f318d] font-bold">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="text-sm">{countdown}s</span>
-            </div>
-          </div>
 
           <button
             onClick={() => {
