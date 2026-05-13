@@ -1,11 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import dns from 'dns';
-
-// Force IPv4 to resolve ENETUNREACH errors on networks with broken IPv6
-dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config();
 
@@ -13,34 +9,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
-  requireTLS: true,
-  family: 4,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('SMTP Connection Error:', error);
-  } else {
-    console.log('SMTP Server is ready to take our messages');
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const SENDER_EMAIL = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
 const logoPath = path.join(__dirname, '..', 'public', 'cics.png');
 const logoBuffer = fs.readFileSync(logoPath);
-
-
-
+const logoBase64 = logoBuffer.toString('base64');
 
 const shell = (bodyContent) => `
 <!DOCTYPE html>
@@ -105,9 +79,7 @@ const shell = (bodyContent) => `
 </body>
 </html>`;
 
-
 export const sendVoteEmail = async (userEmail, userName, electionName, votes) => {
-
   const voteRows = votes.map((v) => `
         <tr>
           <td style="padding-bottom:10px;">
@@ -189,15 +161,15 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
         </tr>
     `;
 
-  return transporter.sendMail({
-    from: `"MSU CICS Elections" <${process.env.SMTP_USER}>`,
+  return resend.emails.send({
+    from: `MSU CICS Elections <${SENDER_EMAIL}>`,
     to: userEmail,
     subject: `Ballot Receipt: ${electionName}`,
     html: shell(bodyContent),
     attachments: [
       {
         filename: 'cics.png',
-        content: logoBuffer,
+        content: logoBase64,
         cid: 'cics-logo',
       },
     ],
@@ -311,8 +283,8 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
         </tr>
     `;
 
-  return transporter.sendMail({
-    from: `"MSU CICS Membership" <${process.env.SMTP_USER}>`,
+  return resend.emails.send({
+    from: `MSU CICS Membership <${SENDER_EMAIL}>`,
     to: userEmail,
     subject: isApproved
       ? 'Application Approved – MSU CICS'
@@ -321,7 +293,7 @@ export const sendStatusEmail = async (userEmail, userName, action) => {
     attachments: [
       {
         filename: 'cics.png',
-        content: logoBuffer,
+        content: logoBase64,
         cid: 'cics-logo',
       },
     ],
