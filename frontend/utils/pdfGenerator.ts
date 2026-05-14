@@ -143,24 +143,20 @@ export const generateVoteReceipt = async (data: {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const inApp = isInAppBrowser();
 
-    if (inApp) {
-      // Messenger/Instagram often block blob downloads.
-      // Data URIs are sometimes handled better as they are seen as "navigating" to a PDF.
-      const dataUri = doc.output('datauristring');
-      window.location.href = dataUri;
-      return;
-    }
+    if (inApp || isMobile) {
 
-    if (isMobile) {
       const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
-      // Mobile browsers handle window.open/location better for blobs
+
       const newWindow = window.open(url, '_blank');
+
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
         window.location.href = url;
       }
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } else {
+
       doc.save(fileName);
     }
 
