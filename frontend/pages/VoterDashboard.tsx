@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { memo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useActiveElection } from '../hooks/useActiveElection';
@@ -10,12 +10,12 @@ import {
 import toast from 'react-hot-toast';
 import { generateVoteReceipt, isInAppBrowser } from '../utils/pdfGenerator';
 
-const CandidateCard = memo(({ candidate, isSelected, isFull, maxVote, onSelect, selectedIndex }: any) => {
+const CandidateCard = memo(({ candidate, isSelected, isFull, maxVote, onSelect, selectedIndex, positionId }: any) => {
   const partylistName = candidate.partylist || "Independent";
 
   return (
     <div
-      onClick={onSelect}
+      onClick={() => onSelect(positionId, candidate.candidateId, maxVote)}
       className={`group relative cursor-pointer w-full max-w-70 sm:max-w-none sm:w-65 lg:w-70 aspect-3/4 rounded-4xl overflow-hidden transition-all duration-500 ease-out border-2
         ${isSelected
           ? "border-[#2f318d] shadow-2xl shadow-indigo-900/30 scale-[1.02] md:scale-105"
@@ -122,7 +122,7 @@ const VoterDashboard = () => {
   };
 
 
-  const handleSelect = (positionId: string, candidateId: string, maxVote: number) => {
+  const handleSelect = useCallback((positionId: string, candidateId: string, maxVote: number) => {
     setSelectedVotes(prev => {
       const currentSelection = prev[positionId] || [];
       const isAlreadySelected = currentSelection.includes(candidateId);
@@ -150,7 +150,7 @@ const VoterDashboard = () => {
 
       return prev;
     });
-  };
+  }, []);
 
   const filledCount = useMemo(() =>
     Object.values(selectedVotes).filter(arr => arr.length > 0).length,
@@ -259,30 +259,40 @@ const VoterDashboard = () => {
           <ShieldCheck className="w-10 h-10 md:w-12 md:h-12 relative z-10" strokeWidth={2.5} />
         </div>
         <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Vote Successfully Cast!</h1>
-        <p className="text-slate-500 text-xs md:text-sm mt-3 leading-relaxed mb-8">
+        <p className="text-slate-500 text-xs md:text-sm mt-3 leading-relaxed mb-6">
           Your ballot has been securely recorded. Thank you for participating in the {activeElection?.title || 'current'} election.
         </p>
 
+        {receiptData && (
+          <div className="mb-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3 text-left">
+            <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={16} />
+            <div>
+              <p className="text-[10px] md:text-xs font-bold text-amber-800 uppercase tracking-tight">Notice</p>
+              <p className="text-[10px] md:text-xs text-amber-700 leading-tight mt-1">
+                This is your <strong>only chance</strong> to download your official receipt. Once you logout, this button will disappear and your local session data will be permanently cleared for your security.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="w-full space-y-3">
-          <button
-            onClick={async () => {
-              if (!receiptData) {
-                toast.error("Receipt data not found");
-                return;
-              }
-              try {
-                await generateVoteReceipt(receiptData);
-                toast.success("Receipt downloaded!");
-              } catch (err) {
-                toast.error("Download failed. Please try again.");
-                console.error(err);
-              }
-            }}
-            className="w-full h-14 bg-[#2f318d] text-white rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-          >
-            <Download size={18} />
-            Download Receipt
-          </button>
+          {receiptData && (
+            <button
+              onClick={async () => {
+                try {
+                  await generateVoteReceipt(receiptData);
+                  toast.success("Receipt downloaded!");
+                } catch (err) {
+                  toast.error("Download failed. Please try again.");
+                  console.error(err);
+                }
+              }}
+              className="w-full h-14 bg-[rgb(47,49,141)] text-white rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              <Download size={18} />
+              Download Receipt
+            </button>
+          )}
 
           <button
             onClick={() => logout()}
@@ -305,12 +315,6 @@ const VoterDashboard = () => {
           </div>
         )}
 
-        <div className="mt-8 pt-6 border-t border-slate-100 w-full">
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>Successfully cast your vote.</span>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -364,8 +368,9 @@ const VoterDashboard = () => {
                         isSelected={isSelected}
                         isFull={isFull}
                         maxVote={maxVote}
+                        positionId={pos.positionId}
                         selectedIndex={selected.indexOf(candidate.candidateId)}
-                        onSelect={() => handleSelect(pos.positionId, candidate.candidateId, maxVote)}
+                        onSelect={handleSelect}
                       />
                     );
                   })}
