@@ -191,7 +191,7 @@ export const sendVoteEmail = async (userEmail, userName, electionName, votes) =>
 
 export const sendStatusEmail = async (userEmail, userName, action) => {
   const isApproved = action === 'approved';
-  const loginUrl = 'https://cicsvotingsystem.vercel.app/login';
+  const loginUrl = 'https://voting-system-1-rcb6.onrender.com/login';
 
   const bodyContent = isApproved ? `
         <tr>
