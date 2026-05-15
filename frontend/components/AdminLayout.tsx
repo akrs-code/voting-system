@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Navbar from './Navbar'; 
+import Navbar from './Navbar';
 
 const AdminLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -20,8 +20,8 @@ const AdminLayout: React.FC = () => {
         </div>
 
         {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-65 lg:hidden" 
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-65 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -29,7 +29,7 @@ const AdminLayout: React.FC = () => {
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto py-8 md:py-10 px-5">
             <div className="max-w-7xl mx-auto">
-                <Outlet />
+              <Outlet />
             </div>
           </div>
         </main>

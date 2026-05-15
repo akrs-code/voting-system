@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error("Logout failed", err);
     }
+    localStorage.clear();
     setUser(null);
   }, []);
 

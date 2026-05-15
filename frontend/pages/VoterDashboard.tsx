@@ -83,25 +83,8 @@ const VoterDashboard = () => {
   const [fetching, setFetching] = useState(true);
   const [showReview, setShowReview] = useState(false);
   const [showAbstainWarning, setShowAbstainWarning] = useState(false);
-  const [countdown, setCountdown] = useState(20);
   const [receiptData, setReceiptData] = useState<any>(null);
   const isInApp = useMemo(() => isInAppBrowser(), []);
-
-  useEffect(() => {
-    if (!hasVoted && !activeElection?.isLocked) return;
-
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          logout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [logout, hasVoted, activeElection?.isLocked]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -256,10 +239,13 @@ const VoterDashboard = () => {
         </p>
 
         <div className="mt-8 pt-6 border-t border-slate-100 w-full">
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Redirecting to login in {countdown} seconds...</span>
-          </div>
+          <button
+            onClick={() => logout()}
+            className="w-full h-14 bg-[#2f318d] text-white rounded-2xl font-bold shadow-lg shadow-indigo-900/20 hover:bg-[#26287a] transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+          >
+            <LogOut size={18} />
+            Back to Login
+          </button>
         </div>
       </div>
     </div>
@@ -321,8 +307,8 @@ const VoterDashboard = () => {
 
         <div className="mt-8 pt-6 border-t border-slate-100 w-full">
           <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Redirecting to login in {countdown} seconds...</span>
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Successfully cast your vote.</span>
           </div>
         </div>
       </div>
