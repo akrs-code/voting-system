@@ -109,7 +109,7 @@ export default function Login() {
 
 
             {status && (
-              <div className={`mb-6 p-4 rounded-2xl border ${status.toLowerCase().includes('pending') ? 'bg-indigo-50 border-indigo-100' : 'bg-red-50 border-red-100'}`}>
+              <div className={`mb-6 p-4 rounded-2xl border ${status.toLowerCase().includes('pending') ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'}`}>
                 <p className={`text-sm font-medium text-center ${status.toLowerCase().includes('pending') ? 'text-[#2f318d]' : 'text-red-600'}`}>
                   {status}
                   {status.toLowerCase().includes('pending') && (

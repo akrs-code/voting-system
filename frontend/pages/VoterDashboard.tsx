@@ -349,7 +349,7 @@ const VoterDashboard = () => {
                     </h2>
 
                     {maxVote > 1 && (
-                      <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-[#2f318d] text-[10px] font-bold">
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100 text-[#2f318d] text-[10px] font-bold">
                         {selected.length}/{maxVote} selected
                       </span>
                     )}

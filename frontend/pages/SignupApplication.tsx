@@ -62,7 +62,7 @@ export default function SignupApplication() {
           <p className="text-slate-500 mb-6 leading-relaxed text-sm">
             Your application for the <span className="font-bold text-[#2f318d]">{dept}</span> department is now pending. Please wait for admin approval to log in.
           </p>
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-8">
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8">
             <p className="text-[#2f318d] text-xs font-bold uppercase tracking-wider mb-1">Important</p>
             <p className="text-slate-600 text-[13px]">
               Please <b>check your email</b> for updates regarding your application status.
