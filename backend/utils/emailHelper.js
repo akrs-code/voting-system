@@ -70,14 +70,7 @@ const shell = (bodyContent) => `
         style="max-width:520px;background:#ffffff;border-radius:40px;
                border:1px solid #e2e8f0;
                box-shadow:0 20px 40px rgba(47,49,141,0.06);">
-
-        <tr>
-          <td style="height:5px;background:linear-gradient(90deg,#2f318d,#4f52c8,#2f318d);
-                     border-radius:40px 40px 0 0;"></td>
-        </tr>
-
         ${bodyContent}
-
         <tr>
           <td style="padding:0 40px 36px;" align="center">
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
