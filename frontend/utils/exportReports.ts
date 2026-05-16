@@ -95,11 +95,8 @@ export const generateExcelReport = (
 
       allPerformance.push(row);
 
-      if (pos.department === 'DCS') dcsSheet.push(row);
-      if (pos.department === 'DIS') disSheet.push(row);
-
-      if (isWinner) {
-      }
+      if (pos.department === 'DCS' || pos.department === 'ALL') dcsSheet.push(row);
+      if (pos.department === 'DIS' || pos.department === 'ALL') disSheet.push(row);
     });
   });
 
@@ -215,27 +212,27 @@ export const generateExcelReport = (
   applyWinnersStyle(wsWinners);
 
   const colWidths = [
-    { wch: 25 }, 
-    { wch: 18 }, 
-    { wch: 30 }, 
-    { wch: 12 }, 
-    { wch: 20 }, 
-    { wch: 10 }, 
-    { wch: 15 }  
+    { wch: 25 },
+    { wch: 18 },
+    { wch: 30 },
+    { wch: 12 },
+    { wch: 20 },
+    { wch: 10 },
+    { wch: 15 }
   ];
 
   const overviewColWidths = [
-    { wch: 30 }, 
-    { wch: 40 }  
+    { wch: 30 },
+    { wch: 40 }
   ];
 
   const winnersColWidths = [
-    { wch: 25 }, 
-    { wch: 18 }, 
-    { wch: 30 }, 
-    { wch: 12 }, 
-    { wch: 20 }, 
-    { wch: 15 }  
+    { wch: 25 },
+    { wch: 18 },
+    { wch: 30 },
+    { wch: 12 },
+    { wch: 20 },
+    { wch: 15 }
   ];
 
   wsOverview['!cols'] = overviewColWidths;

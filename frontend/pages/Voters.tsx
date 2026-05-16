@@ -16,11 +16,13 @@ import { voterService } from '../services/voterService';
 import Pagination from '../components/Pagination';
 import CustomDropdown from '../components/CustomDropdown';
 import { Voter } from 'types/interface';
-import { VoterReports } from "../utils/voterReports"
+import { VoterReports } from "../utils/voterReports";
+import { useActiveElection } from '../hooks/useActiveElection';
 import { CheckCircle2 as CheckIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Voters = () => {
+  const { activeElection } = useActiveElection();
   const [voters, setVoters] = useState<Voter[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,7 +138,7 @@ const Voters = () => {
         </div>
         <div className='flex gap-3'>
           <button
-            onClick={() => VoterReports(voters, "CICS General Elections 2026")}
+            onClick={() => VoterReports(voters, activeElection?.title || "MSU CICS Election")}
             className="h-12 w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] font-bold text-sm"
           >
             <FileSpreadsheet size={18} />

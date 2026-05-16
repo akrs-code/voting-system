@@ -127,7 +127,7 @@ const Applications = () => {
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Pending Applications</h1>
           <p className="text-slate-500 text-xs md:text-sm mt-1">Review and verify student registrations for the election cycle.</p>
         </div>
-        <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-2xl border border-amber-100 self-start md:self-center">
+        <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100 self-start md:self-center">
           <Clock className="text-[#2f318d]" size={18} />
           <span className="text-[#2f318d] font-semibold text-sm">{applications.length} Requests Pending</span>
         </div>

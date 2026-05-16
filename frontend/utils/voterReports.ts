@@ -120,12 +120,16 @@ export const VoterReports = (voters: Voter[], electionTitle: string) => {
             font: { bold: true, sz: 12, color: { rgb: "2F318D" } },
             fill: { fgColor: { rgb: "E8EAF6" } }
           };
-        } else if (R > 0 && C === 0 && typeof cellValue === 'string' && (
-          cellValue.includes('Department') || cellValue.includes('Year') || cellValue.includes('Metric')
+        } else if (typeof cellValue === 'string' && (
+          cellValue === 'Department' || cellValue === 'Year Level' ||
+          cellValue === 'Metric' || cellValue === 'Count' ||
+          cellValue === 'Percentage' || cellValue === 'Total Registered' ||
+          cellValue === 'Votes Cast' || cellValue === 'Pending' ||
+          cellValue === 'Turnout Rate'
         )) {
           ws[addr].s = {
             font: { bold: true, color: { rgb: "2F318D" } },
-            fill: { fgColor: { rgb: "F3E5F5" } }
+            fill: { fgColor: { rgb: "E8EAF6" } }
           };
         }
       }
