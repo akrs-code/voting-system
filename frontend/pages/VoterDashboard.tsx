@@ -402,11 +402,7 @@ const VoterDashboard = () => {
                 setShowReview(true);
               }
             }}
-            disabled={filledCount === 0}
-            className={`h-10 md:h-14 px-5 md:px-8 rounded-2xl md:rounded-[1.25rem] text-xs md:text-sm font-bold transition-all flex items-center gap-2 md:gap-2.5 active:scale-[0.98] ${filledCount > 0
-              ? "bg-[#2f318d] text-white shadow-lg shadow-indigo-900/20 hover:bg-[#26287a]"
-              : "bg-slate-100 text-slate-400 cursor-not-allowed"
-              }`}
+            className="h-10 md:h-14 px-5 md:px-8 rounded-2xl md:rounded-[1.25rem] text-xs md:text-sm font-bold transition-all flex items-center gap-2 md:gap-2.5 active:scale-[0.98] bg-[#2f318d] text-white shadow-lg shadow-indigo-900/20 hover:bg-[#26287a]"
           >
             <Eye size={16} />
             <span>Review Ballot</span>
