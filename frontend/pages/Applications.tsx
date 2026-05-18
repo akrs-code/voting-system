@@ -221,8 +221,8 @@ const Applications = () => {
                         </div>
                       </td>
                       <td className="px-6 md:px-10 py-4 text-center">
-                        <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-600 border-amber-100">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-[10px] font-bold border bg-indigo-50 text-[#2f318d] border-indigo-100">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#2f318d] animate-pulse" />
                           REVIEW REQUIRED
                         </div>
                       </td>
@@ -305,7 +305,7 @@ const Applications = () => {
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-[#2f318d] uppercase tracking-widest opacity-60 mb-1">Department</span>
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#2f318d]"></span>
                       <span className="text-sm font-bold text-slate-800">{selectedApp.department}</span>
                     </div>
                   </div>

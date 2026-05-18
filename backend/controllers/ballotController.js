@@ -194,11 +194,13 @@ export const getBallot = async (req, res) => {
             return res.status(403).json({ message: "You are not authorized to vote in this election." });
         }
 
+        const targetYearLevel = typeof userYear === 'number' ? Math.min(userYear + 1, 4) : userYear;
+
         const [positions, candidates] = await Promise.all([
             Position.find({
                 election: eId,
                 department: { $in: [userDept, "ALL"] },
-                $or: [{ yearLevel: userYear }, { yearLevel: null }]
+                $or: [{ yearLevel: targetYearLevel }, { yearLevel: null }]
             }).lean(),
             Candidate.find({ election: eId }).select("name profilePicture partylist department yearLevel position").lean()
         ]);

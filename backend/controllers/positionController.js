@@ -66,10 +66,12 @@ export const getVotingForm = async (req, res) => {
 
         if (!activeElection) return res.status(404).json({ message: "No active election found. Voting form cannot be generated." });
 
+        const targetYearLevel = typeof yearLevel === 'number' ? Math.min(yearLevel + 1, 4) : yearLevel;
+
         const positions = await Position.find({
             election: activeElection._id,
             department: { $in: [department, "ALL"] },
-            yearLevel: { $in: [yearLevel, null] }
+            yearLevel: { $in: [targetYearLevel, null] }
         }).lean();
 
         const allCandidates = await Candidate.find({
