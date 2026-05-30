@@ -13,7 +13,7 @@ export default function Login() {
 
   const validationSchema = Yup.object({
     studentId: Yup.string()
-      .matches(/^202\d{6}$/, "Institutional ID must start with 202 and be 9 digits")
+      .matches(/^20\d{7}$/, "Institutional ID must start with 20 and be 9 digits")
       .required("Institutional ID is required"),
     password: Yup.string().required("Password is required"),
   });

@@ -72,10 +72,18 @@ export const signup = async (req, res) => {
         }
 
         const normalizedId = studentId.trim();
-        const existingUser = await User.findOne({ studentId: normalizedId });
+        const normalizedEmail = email.trim().toLowerCase();
+        const existingUser = await User.findOne({
+            $or: [{ studentId: normalizedId }, { email: normalizedEmail }]
+        });
 
         if (existingUser) {
-            return res.status(400).json({ message: `An account with Student ID ${normalizedId} already exists.` });
+            const isIdDup = existingUser.studentId === normalizedId;
+            return res.status(400).json({
+                message: isIdDup
+                    ? `An account with Student ID ${normalizedId} already exists.`
+                    : `The email address ${normalizedEmail} is already in use.`
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -114,6 +122,15 @@ export const updateUser = async (req, res) => {
                 const existingUser = await User.findOne({ studentId: normalizedId });
                 if (existingUser) return res.status(400).json({ message: `Student ID ${normalizedId} is already assigned to another user.` });
                 user.studentId = normalizedId;
+            }
+        }
+
+        if (email) {
+            const normalizedEmail = email.trim().toLowerCase();
+            if (normalizedEmail !== user.email) {
+                const existingUser = await User.findOne({ email: normalizedEmail });
+                if (existingUser) return res.status(400).json({ message: `The email address ${normalizedEmail} is already in use.` });
+                user.email = normalizedEmail;
             }
         }
 
@@ -192,22 +209,53 @@ export const bulkSignup = async (req, res) => {
         }
 
         const studentIds = users.map((u) => u.studentId?.trim().toLowerCase());
-        const existingUsers = await User.find({ studentId: { $in: studentIds } }).select("studentId");
+        const emails = users.map((u) => u.email?.trim().toLowerCase()).filter(Boolean);
+
+        const existingUsers = await User.find({ 
+            $or: [
+                { studentId: { $in: studentIds } },
+                { email: { $in: emails } }
+            ]
+        }).select("studentId email");
+        
         const existingIdSet = new Set(existingUsers.map((u) => u.studentId));
+        const existingEmailSet = new Set(existingUsers.map((u) => u.email));
+
+        const seenIds = new Set();
+        const seenEmails = new Set();
 
         const skipped = [];
         const toInsert = await Promise.all(
             users.map(async (user) => {
                 const normalizedId = user.studentId?.trim().toLowerCase();
-                if (!normalizedId || !user.password || !user.name) {
+                const normalizedEmail = user.email?.trim().toLowerCase();
+                
+                if (!normalizedId || !user.password || !user.name || !normalizedEmail) {
                     skipped.push({ studentId: normalizedId || "Unknown", reason: "Missing required fields" });
                     return null;
                 }
 
                 if (existingIdSet.has(normalizedId)) {
-                    skipped.push({ studentId: normalizedId, reason: "Already exists" });
+                    skipped.push({ studentId: normalizedId, reason: "Student ID already exists in system" });
                     return null;
                 }
+                
+                if (existingEmailSet.has(normalizedEmail)) {
+                    skipped.push({ studentId: normalizedId, reason: "Email already exists in system" });
+                    return null;
+                }
+                
+                if (seenIds.has(normalizedId)) {
+                    skipped.push({ studentId: normalizedId, reason: "Duplicate Student ID in file" });
+                    return null;
+                }
+                seenIds.add(normalizedId);
+                
+                if (seenEmails.has(normalizedEmail)) {
+                    skipped.push({ studentId: normalizedId, reason: "Duplicate email in file" });
+                    return null;
+                }
+                seenEmails.add(normalizedEmail);
 
                 const hashedPassword = await bcrypt.hash(user.password, 10);
 

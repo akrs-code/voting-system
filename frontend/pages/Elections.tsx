@@ -33,6 +33,7 @@ const Elections = () => {
       setElections(data);
     } catch (error) {
       console.error("Fetch error:", error);
+      toast.error("Failed to load election cycles.");
     } finally {
       setLoading(false);
     }
@@ -217,7 +218,7 @@ const Elections = () => {
                   await fetchElections();
                   toast.success("New election cycle initialized.");
                 } catch (err: any) {
-                  toast.error(err.response?.data?.error || "Transaction failed");
+                  toast.error(err.response?.data?.message || err.response?.data?.error || "Transaction failed");
                 } finally {
                   setSubmitting(false);
                 }

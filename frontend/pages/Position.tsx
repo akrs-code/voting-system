@@ -58,6 +58,7 @@ const Positions = () => {
       setElections(elData);
     } catch (error) {
       console.error("Fetch Error:", error);
+      toast.error("Failed to load electoral positions.");
     } finally {
       setLoading(false);
     }
@@ -214,7 +215,7 @@ const Positions = () => {
                         </span>
 
                         <span className="text-slate-400 text-[11px] font-semibold">
-                          {pos.yearLevel ? `Year ${pos.yearLevel}` : 'All Levels'}
+                          {pos.yearLevel ? `${['', '1st', '2nd', '3rd', '4th'][pos.yearLevel]} Year` : 'All Levels'}
                         </span>
                       </div>
                     </td>

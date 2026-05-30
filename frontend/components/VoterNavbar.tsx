@@ -59,7 +59,7 @@ const VoterNavbar = () => {
                                 <div className="p-2">
                                     <div className="px-3 py-2 mb-1">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account Info</p>
-                                        <p className="text-xs font-medium text-slate-600 mt-1">{user?.department} - Year {user?.yearLevel}</p>
+                                        <p className="text-xs font-medium text-slate-600 mt-1">{user?.department} - {user?.yearLevel ? `${['', '1st', '2nd', '3rd', '4th'][user.yearLevel]} Year` : ''}</p>
                                     </div>
                                     
                                     <button 

@@ -40,7 +40,7 @@ const Voters = () => {
       .matches(/^[a-zA-Z\s.-]+$/, "Name should only contain letters")
       .required("Name is required"),
     studentId: Yup.string()
-      .matches(/^202\d{6}$/, "Institutional ID must start with 202 and be 9 digits")
+      .matches(/^20\d{7}$/, "Institutional ID must start with 20 and be 9 digits")
       .required("Institutional ID is required"),
     email: Yup.string()
       .email("Invalid email")
@@ -55,7 +55,7 @@ const Voters = () => {
     password: Yup.string().when([], {
       is: () => !isEditing,
       then: (schema) =>
-        schema.min(4, "Password too short").required("Password is required"),
+        schema.min(6, "Password must be at least 6 characters").required("Password is required"),
       otherwise: (schema) => schema.notRequired(),
     }),
   });
@@ -67,6 +67,7 @@ const Voters = () => {
       setVoters(data);
     } catch (error) {
       console.error("Fetch error:", error);
+      toast.error("Failed to fetch voter records.");
     } finally {
       setLoading(false);
     }
@@ -234,7 +235,7 @@ const Voters = () => {
                             {voter.department}
                           </span>
                           <span className="text-slate-400 text-[11px] font-semibold">
-                            {voter.yearLevel ? `Year ${voter.yearLevel}` : 'Open Level'}
+                            {voter.yearLevel ? `${['', '1st', '2nd', '3rd', '4th'][voter.yearLevel]} Year` : 'Open Level'}
                           </span>
                         </div>
                       </td>

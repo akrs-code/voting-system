@@ -38,7 +38,8 @@ const Applications = () => {
       const data = await authService.getPendingApplications();
       setApplications(data);
     } catch (error) {
-      console.error(error);
+      console.error("Fetch error:", error);
+      toast.error("Failed to load pending applications.");
     } finally {
       setLoading(false);
     }

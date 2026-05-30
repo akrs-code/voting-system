@@ -36,7 +36,7 @@ export default function SignupApplication() {
   const validationSchema = Yup.object({
     name: Yup.string().required("Full name is required"),
     studentId: Yup.string()
-      .matches(/^202\d{6}$/, "Institutional ID must start with 202 and be 9 digits")
+      .matches(/^20\d{7}$/, "Institutional ID must start with 20 and be 9 digits")
       .required("Institutional ID is required"),
     email: Yup.string()
       .email("Invalid email")
@@ -98,7 +98,7 @@ export default function SignupApplication() {
             setIsSuccess(true);
             toast.success("Application sent successfully!");
           } catch (err: any) {
-            const errorMsg = err.response?.data?.error || "Submission failed. Please try again.";
+            const errorMsg = err.response?.data?.message || err.response?.data?.error || "Submission failed. Please try again.";
             setStatus(errorMsg);
             toast.error(errorMsg);
           } finally {

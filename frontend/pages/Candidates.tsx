@@ -63,7 +63,8 @@ const Candidates = () => {
       setCandidates(candData);
       setElections(elData);
     } catch (error) {
-      console.error(error);
+      console.error("Fetch error:", error);
+      toast.error("Failed to load candidate registry.");
     } finally {
       setLoading(false);
     }
@@ -321,7 +322,7 @@ const Candidates = () => {
                   resetForm();
                   fetchData();
                 } catch (err: any) {
-                  toast.error(err.response?.data?.error || "Error encountered.");
+                  toast.error(err.response?.data?.message || err.response?.data?.error || "Error encountered.");
                 } finally {
                   setSubmitting(false);
                 }
